@@ -8,13 +8,11 @@ Created on Tue Sep 19 16:38:54 2023
 
 import streamlit as st
 import folium
-from streamlit_folium import st_folium
+from streamlit_folium import st_folium, folium_static
 import requests 
 import pandas as pd
 import geopandas
 
-#import altair as at
-#import capstone
 
 st.title("Capstone")
 st.text("An interactive map of Malden")
@@ -48,9 +46,9 @@ lon_0 = float(data[0]["lon"])
 
 
 # City Centre and points around it
-map = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=15)
+m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=15)
 
-map.add_child(
+m.add_child(
     folium.Marker(
         location = [lat_0, lon_0], popup='City Center', icon=folium.Icon(color='blue')        
     ))
@@ -71,9 +69,9 @@ geo_df_list = [[point.x, point.y] for point in geometry_ok]
 
 for ind, val in enumerate(geo_df_list[:100]):
     # Place the markers for car crash
-    folium.CircleMarker(location=geo_df_list[ind], radius=2, color='red').add_to(map)
+    folium.CircleMarker(location=geo_df_list[ind], radius=2, color='red').add_to(m)
 
 
-st_data = st_folium(map, width=725)
+folium_static(m, width=725)
 
 
