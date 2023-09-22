@@ -45,7 +45,7 @@ def find_box(lat, lon):
     lat_conv = 0.000000274    #lat: 1 ft = 0.000000274 deg
     lon_conv = 0.000000347    #lon: 1 ft = 0.000000347 deg
     
-    delta = 1000 # feet
+    delta = 1500 # feet
     d_lat = delta * lat_conv
     d_lon = delta * lon_conv
     

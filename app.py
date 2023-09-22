@@ -32,6 +32,13 @@ crash_df = map_plot.load_data()
 m = map_plot.plot_points(data, crash_df)
 
 folium_static(m, width=725)
+st.caption("Map of Malden centered around address.  Gray box indicates search space for \
+           car accidents that go into the MOSEY calculation. Blue dots indicate car crashes\
+           and red dots indicate car crashes involving pedestrians.")
+
+
+st.subheader("Car crashes involving pedestrians are on the rise.")
+st.image('data_sources/car_crash_plot.png', caption='Normalized car crash data of time.')
 
 
 st.write("About MOSEY"
