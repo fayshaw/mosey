@@ -12,6 +12,8 @@ import pandas as pd
 #import numpy as np
 import geopandas
 import re
+import os
+from dotenv import load_dotenv
 
 def load_data():    
     folder = 'data_sources/'
@@ -39,6 +41,14 @@ def get_addr_str(addr_dict):
     new_road = re.sub(" ", "_", addr_dict['road'])
     addr_str = num + '_' + new_road
     return addr_str
+
+def get_walk_score(lat, lon):
+    load_dotenv()
+    apikey = os.getenv("WALK_API", "")
+    url = 'http://api.walkscore.com/score?format=json&lat='+str(lat)+'&lon='+str(lon)+'&wsapikey='+apikey
+    r = requests.get(url)
+    data = r.json()
+    return data['walkscore']
 
 
 def find_box(lat, lon):    
@@ -124,9 +134,8 @@ def plot_points(data, crash_df):
             folium.CircleMarker(location=geo_zone_df_list[ind], radius=3, weight=6, color='blue').add_to(m)
 
     score = score_address(zone_df)
-    print(score)    
 
-    return m
+    return m, score
 
 
 
@@ -143,6 +152,6 @@ if __name__ == '__main__':
 
     addr_str = get_addr_str(data[0]['address'])    
     crash_df = load_data()
-    m = plot_points(data, crash_df)    
+    m, score = plot_points(data, crash_df)    
     m.save(addr_str + '_map.html')
 
