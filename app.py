@@ -7,18 +7,25 @@ Created on Tue Sep 19 16:38:54 2023
 """
 
 import streamlit as st
-#import folium
 from streamlit_folium import folium_static  # st_folium
-#import requests 
-#import pandas as pd
-#import geopandas
 import map_plot
+import places
 
 st.header("Move On Safely EverYone (MOSEY)")
 st.subheader("A safety walk score for pedestrians")
 st.write("Interactive map of Malden with car crash data")
 
-address = st.sidebar.text_input("Enter an address", "442 Main Street Malden MA 02148")
+address = st.sidebar.text_input("Enter an address", "")
+
+places_dict = places.malden_places
+place_list = list(places_dict.keys())
+
+location = st.sidebar.radio(
+    "Or choose from one of the points of interest", place_list)
+
+address = places.malden_places[location]
+st.sidebar.write('The address is: ', address)
+
 data = map_plot.geocode(address).json()  
 
 #while not data:
@@ -26,7 +33,6 @@ data = map_plot.geocode(address).json()
 #                       Please enter a valid address.</p>', unsafe_allow_html=True)
 #    address = st.sidebar.text_input("Enter an address", "442 Main Street Malden MA 02148")
 #    data = map_plot.geocode(address).json()  
-
     
 crash_df = map_plot.load_data()
 m, score = map_plot.plot_points(data, crash_df)

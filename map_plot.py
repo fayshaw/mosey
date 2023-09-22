@@ -9,7 +9,6 @@ Created on Thu Sep 21 08:44:28 2023
 import folium
 import requests 
 import pandas as pd
-#import numpy as np
 import geopandas
 import re
 import os
@@ -30,6 +29,7 @@ def geocode(address):
                                            #  by requests for the API to accept the query.    
     return requests.get('http://nominatim.openstreetmap.org/search', params=params, headers=headers)    
 
+
 def check_address():
     
     return True
@@ -40,6 +40,7 @@ def get_addr_str(addr_dict):
     new_road = re.sub(" ", "_", addr_dict['road'])
     addr_str = num + '_' + new_road
     return addr_str
+
 
 def get_walk_score(lat, lon):
     apikey = os.getenv("WALK_API", "")
@@ -61,7 +62,7 @@ def find_box(lat, lon):
 def score_address(zone_df):
     
     thresh_year = 2012
-    thresh_zone_df = zone_df[zone_df['year'] > 2012]
+    thresh_zone_df = zone_df[zone_df['year'] > thresh_year]
     
     score = thresh_zone_df.shape[0] # count number of accidents
         
