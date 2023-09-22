@@ -40,6 +40,7 @@ def get_addr_str(addr_dict):
     addr_str = num + '_' + new_road
     return addr_str
 
+
 def find_box(lat, lon):    
     lat_conv = 0.000000274    #lat: 1 ft = 0.000000274 deg
     lon_conv = 0.000000347    #lon: 1 ft = 0.000000347 deg
@@ -49,6 +50,16 @@ def find_box(lat, lon):
     d_lon = delta * lon_conv
     
     return(lat-d_lat, lat+d_lat, lon-d_lon, lon+d_lon)
+
+def score_address(zone_df):
+    
+    thresh_year = 2012
+    thresh_zone_df = zone_df[zone_df['year'] > 2012]
+    
+    score = thresh_zone_df.shape[0] # count number of accidents
+        
+    # can try different scores
+    return score
 
 
 def plot_points(data, crash_df):
@@ -72,19 +83,16 @@ def plot_points(data, crash_df):
     # Create point geometries
     geometry = geopandas.points_from_xy(crash_df.lat, crash_df.lon)
     geo_raw = geopandas.GeoDataFrame(
-        crash_df[["year", "lat", "lon"]], geometry=geometry)
+        crash_df[['year', 'lat', 'lon', 'first_hrmf_event_descr']], geometry=geometry)
 
     # drop empty points
     geo_df = geo_raw.loc[~geo_raw.geometry.is_empty]
     geometry = geopandas.points_from_xy(geo_df.lat, geo_df.lon)
 
     # Create a geometry list from the GeoDataFrame for all data points
-    geo_df_list = [[point.x, point.y] for point in geometry]
+    geo_df_list = [[point.x, point.y] for point in geometry]  # unused
     
-    boundingbox = data[0]['boundingbox']
-    # Parse bounding box coordinates
-    lat_min, lat_max, lon_min, lon_max = map(float, boundingbox)
-
+    
     # Create a rectangle (bounding box) on the map
     folium.Rectangle(
         bounds=[(min_lat, min_lon), (max_lat, max_lon)],
@@ -96,10 +104,11 @@ def plot_points(data, crash_df):
 
     zone_df = crash_df[crash_df['lat'].between(min_lat, max_lat) & crash_df['lon'].between(min_lon, max_lon)]
 
+    # Duplicate code???
     # Create point geometries
     geo_zone = geopandas.points_from_xy(zone_df.lat, zone_df.lon)
     geo_zone_df = geopandas.GeoDataFrame(
-        zone_df[["year", "lat", "lon", "first_hrmf_event_descr"]], geometry=geo_zone)
+        zone_df[['year', 'lat', 'lon', 'first_hrmf_event_descr']], geometry=geo_zone)
     
     # drop empty points
     geo_zone_df = geo_zone_df.loc[~geo_zone_df.geometry.is_empty]
@@ -110,16 +119,13 @@ def plot_points(data, crash_df):
 
     for ind, val in enumerate(geo_zone_df_list):
         if geo_zone_df.iloc[ind]['first_hrmf_event_descr'] == 'Collision with pedestrian':
-            folium.CircleMarker(location=geo_zone_df_list[ind], radius=5, weight=6, color='red').add_to(m)
+            folium.CircleMarker(location=geo_zone_df_list[ind], radius=3, weight=6, color='red').add_to(m)
         else:
-            folium.CircleMarker(location=geo_zone_df_list[ind], radius=5, weight=6, color='blue').add_to(m)
+            folium.CircleMarker(location=geo_zone_df_list[ind], radius=3, weight=6, color='blue').add_to(m)
 
+    score = score_address(zone_df)
+    print(score)    
 
-# Plot 100 points
-#    for ind, val in enumerate(geo_df_list[:100]):
-#        # Place the markers for car crash
-#        folium.CircleMarker(location=geo_df_list[ind], radius=2, color='red').add_to(m)
-    
     return m
 
 
