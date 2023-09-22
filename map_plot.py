@@ -13,7 +13,6 @@ import pandas as pd
 import geopandas
 import re
 import os
-from dotenv import load_dotenv
 
 def load_data():    
     folder = 'data_sources/'
@@ -43,13 +42,11 @@ def get_addr_str(addr_dict):
     return addr_str
 
 def get_walk_score(lat, lon):
-    load_dotenv()
     apikey = os.getenv("WALK_API", "")
     url = 'http://api.walkscore.com/score?format=json&lat='+str(lat)+'&lon='+str(lon)+'&wsapikey='+apikey
     r = requests.get(url)
     data = r.json()
     return data['walkscore']
-
 
 def find_box(lat, lon):    
     lat_conv = 0.000000274    #lat: 1 ft = 0.000000274 deg
