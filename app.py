@@ -15,15 +15,22 @@ from streamlit_folium import folium_static #st_folium
 import map_plot
 
 
-st.title("Capstone")
-st.text("An interactive map of Malden")
+st.title("MOSEY")
+st.header("A safety walkscore for pedestrians")
+st.text("Interactive map of Malden with car crash data")
 
 address = st.sidebar.text_input("Enter an address", "442 Main Street Malden MA 02148")
+
 data = map_plot.geocode(address).json()  
+
+if not data:
+    st.sidebar.caption('<p style="text-align:right; color:pink;"> \
+                         Please enter a valid address.</p>', unsafe_allow_html=True)
+
+
 crash_df = map_plot.load_data()
+
 
 m = map_plot.plot_points(address, data, crash_df)
 
 folium_static(m, width=725)
-
-#m.save(address[:20]+'.html')
