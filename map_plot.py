@@ -12,6 +12,16 @@ import pandas as pd
 import geopandas
 import re
 import os
+from dotenv import load_dotenv
+
+malden_places = {
+    'Immigrant Learning Center'    : '442 Main Street Malden MA 02148',
+    'Malden Public Library'        : '36 Salem St., Malden, MA 02148',     
+    'Walgreens at Centre and Main' : '185 Centre St, Malden, MA 02148',
+    'Malden Center T Station'      : '30 Commercial St, Malden, MA 02148', # Commercial St &, Pleasant St, Malden, MA 02148
+    'Ferryway School'              : '150 Cross St, Malden, MA 02148'     
+    }
+
 
 def load_data():    
     folder = 'data_sources/'
@@ -43,6 +53,7 @@ def get_addr_str(addr_dict):
 
 
 def get_walk_score(lat, lon):
+    load_dotenv()
     apikey = os.getenv("WALK_API", "")
     url = 'http://api.walkscore.com/score?format=json&lat='+str(lat)+'&lon='+str(lon)+'&wsapikey='+apikey
     r = requests.get(url)
