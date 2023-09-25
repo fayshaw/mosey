@@ -79,10 +79,10 @@ st.write("[Pedestrian death is on the rise](https://www.npr.org/2023/06/26/11840
 st.image('data_sources/car_crashes_pedestrian_pct.png', caption='Car crashes over time and pedstrian crashes as a percent of total crashes.')
 
 
-st.subheader("Map of Malden with 2022 car crash data")
-
 
 st.subheader("Malden Map")
+st.write("Map of Malden with 2022 car crash data")
+
 folium_static(m22, width=600)
 st.caption("Car crash data for 2022. Blue dots indicate car crashes\
            and red dots indicate car crashes with pedestrians.")
