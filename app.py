@@ -12,11 +12,12 @@ import map_plot
 #import places
 
 st.header("Move On Safely EverYone (MOSEY)")
-st.subheader("A safety walk score for pedestrians")
+st.subheader("A safety walkability tool for pedestrians")
 st.write("Interactive map of Malden with car crash data")
 
 
-### SIDE BAR - ADDRESS INPUT -----------
+
+########## SIDE BAR - ADDRESS INPUT #############
 address_input = st.sidebar.text_input("Enter an address", "")
 
 places_dict = map_plot.malden_places
@@ -30,52 +31,66 @@ if address_input:
 else:
     address = map_plot.malden_places[location]
 
-st.sidebar.write('The address is: ', address)
-### SIDE BAR - ADDRESS INPUT -----------
+########## END SIDE BAR - ADDRESS INPUT #############
+
 
 
 data = map_plot.geocode(address).json()  
 
-#while not data:
-#    error_message = st.sidebar.caption('<p style="text-align:right; color:pink;"> \
-#                       Please enter a valid address.</p>', unsafe_allow_html=True)
-#    address = st.sidebar.text_input("Enter an address", "442 Main Street Malden MA 02148")
-#    data = map_plot.geocode(address).json()  
-    
 crash_df = map_plot.load_data()
-m, score = map_plot.plot_points(data, crash_df)
+m, m22, score = map_plot.plot_points(data, crash_df)
 
 folium_static(m, width=600)
 
 
-### SIDE BAR -----------
-#st.sidebar.write("<h2>MOSEY Score:</h2>", score, unsafe_allow_html=True)
-st.sidebar.markdown(f"<h1 style='font-size: 36x;'>MOSEY Score: {score}</h1>", unsafe_allow_html=True)
-st.sidebar.write("The MOSEY score was designed to capture walkability from the perspective of pedestrian safety. \
-                 The score is calulated based on the number of car crashes in the recent years.")
+
+########## SIDE BAR #############
+if score > 0:
+    text_color = 'red'
+else:
+    text_color = 'black'
+st.sidebar.markdown(f"<h2 style='font-size: 24px; color:{text_color}'>Car Crash Count: {score}</h1>", unsafe_allow_html=True)
+st.sidebar.caption("This is the count of nearby car crashes since 2013.  Walkability needs to include pedestrian safety.")
 
 lat_0 = float(data[0]["lat"])
 lon_0 = float(data[0]["lon"])
 
 # Walk score
 walk_score = map_plot.get_walk_score(lat_0, lon_0)
-st.sidebar.markdown(f"<h1 style='font-size: 36x;'>Walk Score: {walk_score}</h1>", unsafe_allow_html=True)
-st.sidebar.markdown("Score from [Walkscore.com](https://www.walkscore.com). For methodology and definitions \
-#                   visit https://www.walkscore.com/methodology.shtml")
-### END SIDE BAR ----------
+st.sidebar.markdown(f"<h1 style='font-size: 24px;'>Walk Score: {walk_score}</h1>", unsafe_allow_html=True)
+
+st.sidebar.caption("[Walk Score](https://www.walkscore.com) has been developed by Redfin as a measure of walkability. It is largely based \
+                    on proximity to restaurants and other amenities. [Methodology and definitions here.](https://www.walkscore.com/methodology.shtml)")
+########## END SIDE BAR #############
 
 
-st.caption("Map of Malden centered around address.  The gray box indicates search space for \
+st.caption("Map of Malden centered around the address input.  The gray box indicates search space for \
            car accidents that go into the MOSEY calculation. Blue dots indicate car crashes\
-           and red dots indicate car crashes involving pedestrians.")
+           and red dots indicate car crashes with pedestrians.")
+
+
 
 st.subheader("Motivation")
-st.write("Car crashes involving pedestrians are on the rise.")
-st.image('data_sources/car_crash_plot.png', caption='Normalized car crash data of time.')
+st.write("[Pedestrian death is on the rise](https://www.npr.org/2023/06/26/1184034017/us-pedestrian-deaths-high-traffic-car) in the US.\
+         Massachussets reported a [35% increase in pedestrian death in 2022.](https://storymaps.arcgis.com/stories/5ef0c0ec60764c85a7e6ace69b752fd4)\
+         This project is an examination of walkability with respect to pedestrian safety.  It uses car crash data in the Malden, a city north of Boston \
+         with a population of 66,000.")
+
+st.image('data_sources/car_crashes_pedestrian_pct.png', caption='Car crashes over time and pedstrian crashes as a percent of total crashes.')
 
 
-#st.write("About MOSEY")
+st.subheader("Map of Malden with 2022 car crash data")
 
-st.write("Data from the Massachusetts Department of Transportation \
-(MassDOT) Crash Data Portal \
-https://apps.impact.dot.state.ma.us/cdp/home")
+
+st.subheader("Malden Map")
+folium_static(m22, width=600)
+st.caption("Car crash data for 2022. Blue dots indicate car crashes\
+           and red dots indicate car crashes with pedestrians.")
+
+st.write("Data from the [Massachusetts Department of Transportation (MassDOT) Crash Data Portal.](https://apps.impact.dot.state.ma.us/cdp/home)")
+st.write("Code on [Github.](https://github.com/fayzer/mosey)")
+
+
+
+
+

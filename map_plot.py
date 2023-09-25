@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+
 Created on Thu Sep 21 08:44:28 2023
 
 @author: fayshaw
@@ -14,18 +15,24 @@ import re
 import os
 #from dotenv import load_dotenv
 
+
 malden_places = {
-    'Immigrant Learning Center'    : '442 Main Street Malden MA 02148',
-    'Malden Public Library'        : '36 Salem St., Malden, MA 02148',     
-    'Walgreens at Centre and Main' : '185 Centre St, Malden, MA 02148',
-    'Malden Center T Station'      : '30 Commercial St, Malden, MA 02148', # Commercial St &, Pleasant St, Malden, MA 02148
-    'Ferryway School'              : '150 Cross St, Malden, MA 02148'     
+    'Centre St & Main St'          : '361 Main St, Malden, MA 02148',
+    'Main St & Salem St'           : '442 Main Street Malden MA 02148',
+    'Commercial St & Charles St'   : '109 Commercial St, Malden, MA 02148',
+    'Ferryway School'              : '150 Cross St, Malden, MA 02148',  
+    'Beebe School'                 : '401 Pleasant St, Malden, MA 02148',
+    'Early Learning Center'        : '257 Mountain Ave, Malden, MA 02148',
+    'Malden Center T Station'      : '30 Commercial St, Malden, MA 02148',
+    'MA 99 at Broadway Plaza '     : '62 Broadway, Malden, MA 02148'
     }
+
 
 
 def load_data():    
     folder = 'data_sources/'
     crash_file =  'export_7_4_2023_16_43_30.csv' # 2003-2023
+#    crash_file = 'export_9_25_2023_10_14_51.csv'  # downloaded Sep 25
     crash_df = pd.read_csv(folder + crash_file, skipfooter=3, engine='python',
                     dtype={'year': 'Int32', 'speed_limit': 'Int32'})
     return crash_df
@@ -40,11 +47,6 @@ def geocode(address):
     return requests.get('http://nominatim.openstreetmap.org/search', params=params, headers=headers)    
 
 
-def check_address():
-    
-    return True
-
-
 def get_addr_str(addr_dict):
     num = addr_dict['house_number']    
     new_road = re.sub(" ", "_", addr_dict['road'])
@@ -53,12 +55,12 @@ def get_addr_str(addr_dict):
 
 
 def get_walk_score(lat, lon):
-#    load_dotenv()
     apikey = os.getenv("WALK_API")
     url = 'http://api.walkscore.com/score?format=json&lat='+str(lat)+'&lon='+str(lon)+'&wsapikey='+apikey
     r = requests.get(url)
     data = r.json()
     return data['walkscore']
+
 
 def find_box(lat, lon):    
     lat_conv = 0.000000274    #lat: 1 ft = 0.000000274 deg
@@ -70,47 +72,35 @@ def find_box(lat, lon):
     
     return(lat-d_lat, lat+d_lat, lon-d_lon, lon+d_lon)
 
-def score_address(zone_df):
-    
-    thresh_year = 2012
-    thresh_zone_df = zone_df[zone_df['year'] > thresh_year]
-    
-    score = thresh_zone_df.shape[0] # count number of accidents
+
+def count_zone_crashes(zone_df, thresh_year):    
+    thresh_zone_df = zone_df[zone_df['year'] >= thresh_year] 
+    crash_count = thresh_zone_df.shape[0] # count number of accidents
         
     # can try different scores
-    return score
+    return crash_count
+
 
 
 def plot_points(data, crash_df):
     address = data[0]['address']['house_number'] + ' ' + data[0]['address']['road']
-        
+    
     # Extract the latitude and longitude from the first result
     lat_0 = float(data[0]["lat"])
     lon_0 = float(data[0]["lon"])
 
-    m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=18)
-
+    # Freeze navigation
+    m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=18, 
+                   zoom_control=False, scrollWheelZoom=False, dragging=False)         
+           
     m.add_child(
         folium.Marker(
             location = [lat_0, lon_0], popup=address, icon=folium.Icon(color='blue')        
         ))
 
     min_lat, max_lat, min_lon, max_lon = find_box(lat_0, lon_0)
-#    box = np.array([[min_lat, min_lon], [min_lat, max_lon], [max_lat, min_lon], [max_lat, max_lon]])
-#    box_x, box_y = box.T
 
-    # Create point geometries
-    geometry = geopandas.points_from_xy(crash_df.lat, crash_df.lon)
-    geo_raw = geopandas.GeoDataFrame(
-        crash_df[['year', 'lat', 'lon', 'first_hrmf_event_descr']], geometry=geometry)
-
-    # drop empty points
-    geo_df = geo_raw.loc[~geo_raw.geometry.is_empty]
-    geometry = geopandas.points_from_xy(geo_df.lat, geo_df.lon)
-
-    # Create a geometry list from the GeoDataFrame for all data points
-    geo_df_list = [[point.x, point.y] for point in geometry]  # unused
-    
+   
     
     # Create a rectangle (bounding box) on the map
     folium.Rectangle(
@@ -123,7 +113,7 @@ def plot_points(data, crash_df):
 
     zone_df = crash_df[crash_df['lat'].between(min_lat, max_lat) & crash_df['lon'].between(min_lon, max_lon)]
 
-    # Duplicate code???
+    # Code for zone around address
     # Create point geometries
     geo_zone = geopandas.points_from_xy(zone_df.lat, zone_df.lon)
     geo_zone_df = geopandas.GeoDataFrame(
@@ -142,9 +132,58 @@ def plot_points(data, crash_df):
         else:
             folium.CircleMarker(location=geo_zone_df_list[ind], radius=3, weight=6, color='blue').add_to(m)
 
-    score = score_address(zone_df)
+#    thresh_year = 2002
+    thresh_year = 2013
+#    crash_count = count_zone_crashes(zone_df, thresh_year)
 
-    return m, score
+    thresh_zone_df = zone_df[zone_df['year'] >= thresh_year] 
+    crash_count = thresh_zone_df.shape[0] # count number of accidents
+        
+    
+    
+    
+    # This code is to plot all points in 2022
+    
+    crash22_df = crash_df[crash_df['year'] == 2022]    
+    m22 = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=15)
+
+#    m22 = folium.Map(location=[lat_1, lon_1], tiles="OpenStreetMap", zoom_start=18, 
+#                   zoom_control=False, scrollWheelZoom=False, dragging=False)         
+
+#    start_address = '442 Main Street',    # Immigrant Learning Center
+#    lat_1 = 42.427119
+#    lon_1 = -71.067107
+
+
+    # Create point geometries
+    geometry22 = geopandas.points_from_xy(crash22_df.lat, crash22_df.lon)
+    geo22_df = geopandas.GeoDataFrame(
+        crash22_df[["year", "lat", "lon", "first_hrmf_event_descr"]], geometry=geometry22
+    )
+        
+           
+    # drop empty points
+    geo22_df = geo22_df.loc[~geo22_df.geometry.is_empty]
+    geometry22 = geopandas.points_from_xy(geo22_df.lat, geo22_df.lon)
+    # Create a geometry list from the GeoDataFrame for all data points
+    geo22_df_list = [[point.x, point.y] for point in geometry22]  # unused
+    
+    m22.add_child(
+        folium.Marker(
+            location = [lat_0, lon_0], popup=address, icon=folium.Icon(color='blue')        
+        ))
+
+    
+
+    for ind, val in enumerate(geo22_df_list):
+        if geo22_df.iloc[ind]['first_hrmf_event_descr'] == 'Collision with pedestrian':
+            folium.CircleMarker(location=geo22_df_list[ind], radius=2, weight=4, color='red').add_to(m22)
+        else:
+            folium.CircleMarker(location=geo22_df_list[ind], radius=2, weight=4, color='blue').add_to(m22)
+
+     
+    
+    return m, m22, crash_count
 
 
 
