@@ -90,9 +90,11 @@ def plot_points(data, crash_df):
     lon_0 = float(data[0]["lon"])
 
     # Freeze navigation
-    m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=18, 
-                   zoom_control=False, scrollWheelZoom=False, dragging=False)         
-           
+#    m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=18, 
+#                   zoom_control=False, scrollWheelZoom=False, dragging=False)         
+ 
+    m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=18)       
+          
     m.add_child(
         folium.Marker(
             location = [lat_0, lon_0], popup=address, icon=folium.Icon(color='blue')        
@@ -128,18 +130,16 @@ def plot_points(data, crash_df):
 
     for ind, val in enumerate(geo_zone_df_list):
         if geo_zone_df.iloc[ind]['first_hrmf_event_descr'] == 'Collision with pedestrian':
-            folium.CircleMarker(location=geo_zone_df_list[ind], radius=3, weight=6, color='red').add_to(m)
+            folium.CircleMarker(location=geo_zone_df_list[ind], radius=2, weight=3, color='red').add_to(m)
         else:
-            folium.CircleMarker(location=geo_zone_df_list[ind], radius=3, weight=6, color='blue').add_to(m)
+            folium.CircleMarker(location=geo_zone_df_list[ind], radius=2, weight=3, color='blue').add_to(m)
 
-#    thresh_year = 2002
-    thresh_year = 2013
-#    crash_count = count_zone_crashes(zone_df, thresh_year)
+    thresh_year = 2002
+#    thresh_year = 2013
 
     thresh_zone_df = zone_df[zone_df['year'] >= thresh_year] 
     crash_count = thresh_zone_df.shape[0] # count number of accidents
         
-    
     
     
     # This code is to plot all points in 2022
@@ -177,11 +177,10 @@ def plot_points(data, crash_df):
 
     for ind, val in enumerate(geo22_df_list):
         if geo22_df.iloc[ind]['first_hrmf_event_descr'] == 'Collision with pedestrian':
-            folium.CircleMarker(location=geo22_df_list[ind], radius=2, weight=4, color='red').add_to(m22)
+            folium.CircleMarker(location=geo22_df_list[ind], radius=2, weight=3, color='red').add_to(m22)
         else:
-            folium.CircleMarker(location=geo22_df_list[ind], radius=2, weight=4, color='blue').add_to(m22)
+            folium.CircleMarker(location=geo22_df_list[ind], radius=2, weight=3, color='blue').add_to(m22)
 
-     
     
     return m, m22, crash_count
 

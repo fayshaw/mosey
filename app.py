@@ -13,8 +13,8 @@ import map_plot
 
 st.header("Move On Safely EverYone (MOSEY)")
 st.subheader("A safety walkability tool for pedestrians")
-st.write("Interactive map of Malden with car crash data")
 
+st.write("Location with nearby car crashes")
 
 
 ########## SIDE BAR - ADDRESS INPUT #############
@@ -40,7 +40,35 @@ data = map_plot.geocode(address).json()
 crash_df = map_plot.load_data()
 m, m22, score = map_plot.plot_points(data, crash_df)
 
+# MAP
 folium_static(m, width=600)
+
+
+st.subheader("Interactive Map of Malden")
+st.write("Map with 2022 car crash data")
+
+folium_static(m22, width=600)
+st.caption("Car crash data for 2022. Blue dots indicate car crashes\
+           and red dots indicate car crashes with pedestrians.")
+           
+
+st.caption("Map of Malden centered around the address input.  The gray box indicates search space for \
+           car accidents that go into the MOSEY calculation. Blue dots indicate car crashes\
+           and red dots indicate car crashes with pedestrians.")
+
+
+st.subheader("Motivation")
+st.write("[Pedestrian death is on the rise](https://www.npr.org/2023/06/26/1184034017/us-pedestrian-deaths-high-traffic-car) in the US.\
+         Massachussets reported a [35% increase in pedestrian death in 2022.](https://storymaps.arcgis.com/stories/5ef0c0ec60764c85a7e6ace69b752fd4)\
+         This project is an examination of walkability with respect to pedestrian safety.  It uses car crash data in the Malden, a city north of Boston \
+         with a population of 66,000.")
+
+st.image('data_sources/car_crashes_pedestrian_pct.png', caption='Car crashes over time and pedstrian crashes as a percent of total crashes.')
+
+
+
+st.write("Data from the [Massachusetts Department of Transportation (MassDOT) Crash Data Portal.](https://apps.impact.dot.state.ma.us/cdp/home)")
+st.write("Code on [Github.](https://github.com/fayzer/mosey)")
 
 
 
@@ -62,35 +90,6 @@ st.sidebar.markdown(f"<h1 style='font-size: 24px;'>Walk Score: {walk_score}</h1>
 st.sidebar.caption("[Walk Score](https://www.walkscore.com) has been developed by Redfin as a measure of walkability. It is largely based \
                     on proximity to restaurants and other amenities. [Methodology and definitions here.](https://www.walkscore.com/methodology.shtml)")
 ########## END SIDE BAR #############
-
-
-st.caption("Map of Malden centered around the address input.  The gray box indicates search space for \
-           car accidents that go into the MOSEY calculation. Blue dots indicate car crashes\
-           and red dots indicate car crashes with pedestrians.")
-
-
-
-st.subheader("Motivation")
-st.write("[Pedestrian death is on the rise](https://www.npr.org/2023/06/26/1184034017/us-pedestrian-deaths-high-traffic-car) in the US.\
-         Massachussets reported a [35% increase in pedestrian death in 2022.](https://storymaps.arcgis.com/stories/5ef0c0ec60764c85a7e6ace69b752fd4)\
-         This project is an examination of walkability with respect to pedestrian safety.  It uses car crash data in the Malden, a city north of Boston \
-         with a population of 66,000.")
-
-st.image('data_sources/car_crashes_pedestrian_pct.png', caption='Car crashes over time and pedstrian crashes as a percent of total crashes.')
-
-
-
-st.subheader("Malden Map")
-st.write("Map of Malden with 2022 car crash data")
-
-folium_static(m22, width=600)
-st.caption("Car crash data for 2022. Blue dots indicate car crashes\
-           and red dots indicate car crashes with pedestrians.")
-
-st.write("Data from the [Massachusetts Department of Transportation (MassDOT) Crash Data Portal.](https://apps.impact.dot.state.ma.us/cdp/home)")
-st.write("Code on [Github.](https://github.com/fayzer/mosey)")
-
-
 
 
 
