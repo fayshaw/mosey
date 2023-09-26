@@ -133,15 +133,12 @@ def plot_points(data, crash_df):
     ).add_to(m)
 
 
-
     for ind, val in enumerate(geo_zone_list):
         if geo_zone_df.iloc[ind]['first_hrmf_event_descr'] == 'Collision with pedestrian':
             folium.CircleMarker(location=geo_zone_list[ind], radius=2, weight=3, color='red').add_to(m)
         else:
             folium.CircleMarker(location=geo_zone_list[ind], radius=2, weight=3, color='blue').add_to(m)
             
-
-        
     
     
     # This code is to plot all points in 2022
