@@ -13,17 +13,18 @@ import pandas as pd
 import geopandas
 import re
 import os
-#from dotenv import load_dotenv
+from dotenv import load_dotenv
 
 
 malden_places = {
     'Centre St & Main St'          : '205 Centre St, Malden, MA 02148',
     'Main St & Salem St'           : '442 Main Street Malden MA 02148',
-    'Ferryway School'              : '150 Cross St, Malden, MA 02148',  
+    'Centre St & Charles St'       : '185 Centre St, Malden, MA 02148',
     'Beebe School'                 : '401 Pleasant St, Malden, MA 02148',
-    'Early Learning Center'        : '257 Mountain Ave, Malden, MA 02148',
+    'Ferryway School'              : '150 Cross St, Malden, MA 02148',  
+#    'Early Learning Center'        : '257 Mountain Ave, Malden, MA 02148',
     'Malden Center T Station'      : '30 Commercial St, Malden, MA 02148',
-    'MA 99 at Broadway Plaza '     : '62 Broadway, Malden, MA 02148'
+    'MA 99 at Broadway Plaza '     : '62 Broadway, Malden, MA 02148',
     }
 
 
@@ -53,6 +54,7 @@ def get_addr_str(addr_dict):
 
 
 def get_walk_score(lat, lon):
+    load_dotenv()
     apikey = os.getenv("WALK_API")
     url = 'http://api.walkscore.com/score?format=json&lat='+str(lat)+'&lon='+str(lon)+'&wsapikey='+apikey
     r = requests.get(url)
@@ -64,7 +66,8 @@ def find_box(lat, lon):
     lat_conv = 0.000000274    #lat: 1 ft = 0.000000274 deg
     lon_conv = 0.000000347    #lon: 1 ft = 0.000000347 deg
     
-    delta = 1000 # feet
+    
+    delta = 2000 # feet
     d_lat = delta * lat_conv
     d_lon = delta * lon_conv
     
@@ -90,8 +93,8 @@ def get_geo_points(lat_0, lon_0, zone_df):
     geo_zone = geopandas.points_from_xy(geo_zone_raw_df.lat, geo_zone_df.lon)
     
     # Create a geometry list from the GeoDataFrame
-    geo_zone_list = [[point.x, point.y] for point in geo_zone]
-    return geo_zone_df, geo_zone_list
+    geo_zone_list = [(point.x, point.y) for point in geo_zone]
+    return geo_zone_df, list(set(geo_zone_list))
 
 
 def plot_points(data, crash_df):
@@ -99,21 +102,20 @@ def plot_points(data, crash_df):
     
     zone_df = pd.DataFrame()
 
-    # Extract the latitude and longitude from the first result
+    # Extract the latitude and longitude
     lat_0 = float(data[0]["lat"])
     lon_0 = float(data[0]["lon"])
 
     min_lat, max_lat, min_lon, max_lon = find_box(lat_0, lon_0)
-    zone_df = crash_df[crash_df['lat'].between(min_lat, max_lat) & crash_df['lon'].between(min_lon, max_lon)]
-
+    crash_lat = crash_df['lat'].between(min_lat, max_lat)
+    crash_lon = crash_df['lon'].between(min_lon, max_lon)
+#    crash_year = crash_df['year'] >= 2002
+    zone_df = crash_df[crash_lat & crash_lon] # & crash_year]
     geo_zone_df, geo_zone_list = get_geo_points(lat_0, lon_0, zone_df)
 
-#    thresh_year = 2002
-#    thresh_year = 2013
-
-#    thresh_zone_df = zone_df[zone_df['year'] >= thresh_year] 
-    crash_count = zone_df.shape[0] # count number of accidents
- 
+#    crash_count = zone_df.shape[0] # count number of accidents
+    crash_count = len(geo_zone_list) # count number of points
+                      
     m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=18)       
 #                   zoom_control=False, scrollWheelZoom=False, dragging=False)    # to freeze navigation     
           
@@ -133,16 +135,12 @@ def plot_points(data, crash_df):
     ).add_to(m)
 
 
-
     for ind, val in enumerate(geo_zone_list):
         if geo_zone_df.iloc[ind]['first_hrmf_event_descr'] == 'Collision with pedestrian':
             folium.CircleMarker(location=geo_zone_list[ind], radius=2, weight=3, color='red').add_to(m)
         else:
             folium.CircleMarker(location=geo_zone_list[ind], radius=2, weight=3, color='blue').add_to(m)
             
-
-        
-    
     
     # This code is to plot all points in 2022
     
@@ -151,10 +149,6 @@ def plot_points(data, crash_df):
 
 #    m22 = folium.Map(location=[lat_1, lon_1], tiles="OpenStreetMap", zoom_start=18, 
 #                   zoom_control=False, scrollWheelZoom=False, dragging=False)         
-
-#    start_address = '442 Main Street',    # Immigrant Learning Center
-#    lat_1 = 42.427119
-#    lon_1 = -71.067107
 
 
     # Create point geometries
@@ -174,8 +168,7 @@ def plot_points(data, crash_df):
         folium.Marker(
             location = [lat_0, lon_0], popup=address, icon=folium.Icon(color='blue')        
         ))
-
-    
+  
 
     for ind, val in enumerate(geo22_df_list):
         if geo22_df.iloc[ind]['first_hrmf_event_descr'] == 'Collision with pedestrian':

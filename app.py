@@ -18,7 +18,7 @@ st.write("Location with nearby car crashes")
 
 
 ########## SIDE BAR - ADDRESS INPUT #############
-address_input = st.sidebar.text_input("Enter an address", "")
+address_input = st.sidebar.text_input("Enter an address in Malden", "")
 
 places_dict = map_plot.malden_places
 place_list = list(places_dict.keys())
@@ -32,7 +32,6 @@ else:
     address = map_plot.malden_places[location]
 
 ########## END SIDE BAR - ADDRESS INPUT #############
-
 
 
 data = map_plot.geocode(address).json()  
@@ -78,7 +77,8 @@ if score > 0:
 else:
     text_color = 'black'
 st.sidebar.markdown(f"<h2 style='font-size: 24px; color:{text_color}'>Car Crash Count: {score}</h1>", unsafe_allow_html=True)
-st.sidebar.caption("This is the count of nearby car crashes since 2013.  Walkability needs to include pedestrian safety.")
+st.sidebar.write("This is the count of nearby car crashes since 2003. These points of interest have high Walk Scores, \
+                  but poor safety. A walkability score needs to include pedestrian safety.") 
 
 lat_0 = float(data[0]["lat"])
 lon_0 = float(data[0]["lon"])
@@ -87,7 +87,7 @@ lon_0 = float(data[0]["lon"])
 walk_score = map_plot.get_walk_score(lat_0, lon_0)
 st.sidebar.markdown(f"<h1 style='font-size: 24px;'>Walk Score: {walk_score}</h1>", unsafe_allow_html=True)
 
-st.sidebar.caption("[Walk Score](https://www.walkscore.com) has been developed by Redfin as a measure of walkability. It is largely based \
+st.sidebar.write("[Walk Score](https://www.walkscore.com) has been developed by Redfin as a measure of walkability. It is largely based \
                     on proximity to restaurants and other amenities. [Methodology and definitions here.](https://www.walkscore.com/methodology.shtml)")
 ########## END SIDE BAR #############
 
