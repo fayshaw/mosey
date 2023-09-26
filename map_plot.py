@@ -13,7 +13,7 @@ import pandas as pd
 import geopandas
 import re
 import os
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 
 
 malden_places = {
