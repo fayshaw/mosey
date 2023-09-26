@@ -39,22 +39,21 @@ data = map_plot.geocode(address).json()
 crash_df = map_plot.load_data()
 m, m22, score = map_plot.plot_points(data, crash_df)
 
-# MAP
+# Map with bounding box
 folium_static(m, width=600)
+
+st.caption("Map of Malden centered around the address entered. The car crash count \
+           is the number of crashes in the gray box. Blue dots indicate car crashes \
+           and red dots indicate car crashes with pedestrians.")
 
 
 st.subheader("Interactive Map of Malden")
-st.write("Map with 2022 car crash data")
+st.write("Map of Malden with 2022 car crash data")
 
 folium_static(m22, width=600)
-st.caption("Car crash data for 2022. Blue dots indicate car crashes\
+st.caption("This map of Malden shows car crash data for 2022. Blue dots indicate car crashes\
            and red dots indicate car crashes with pedestrians.")
            
-
-st.caption("Map of Malden centered around the address input.  The gray box indicates search space for \
-           car accidents that go into the MOSEY calculation. Blue dots indicate car crashes\
-           and red dots indicate car crashes with pedestrians.")
-
 
 st.subheader("Motivation")
 st.write("[Pedestrian death is on the rise](https://www.npr.org/2023/06/26/1184034017/us-pedestrian-deaths-high-traffic-car) in the US.\
@@ -66,7 +65,8 @@ st.image('data_sources/car_crashes_pedestrian_pct.png', caption='Car crashes ove
 
 
 
-st.write("Data from the [Massachusetts Department of Transportation (MassDOT) Crash Data Portal.](https://apps.impact.dot.state.ma.us/cdp/home)")
+st.write("Data from the [Massachusetts Department of Transportation (MassDOT) IMPACT Crash Data Portal.](https://apps.impact.dot.state.ma.us/cdp/home) \
+         This analysis can be extended to other cities and towns across Massachusetts.")
 st.write("Code on [Github.](https://github.com/fayzer/mosey)")
 
 
