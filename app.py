@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Sep 19 16:38:54 2023
+MOSEY: Move On Safely EverYone
 
 @author: fayshaw
 """
@@ -9,7 +9,6 @@ Created on Tue Sep 19 16:38:54 2023
 import streamlit as st
 from streamlit_folium import folium_static  # st_folium
 import map_plot
-#import places
 
 st.header("Move On Safely EverYone (MOSEY)")
 st.subheader("A safety walkability tool for pedestrians")
@@ -18,7 +17,7 @@ st.write("Location with nearby car crashes")
 
 
 ########## SIDE BAR - ADDRESS INPUT #############
-address_input = st.sidebar.text_input("Enter an address in Malden", "")
+address_input = st.sidebar.text_input("Enter an address in Malden (i.e. 215 Pleasant St)", "")
 
 places_dict = map_plot.malden_places
 place_list = list(places_dict.keys())
@@ -27,7 +26,7 @@ location = st.sidebar.radio(
     "Or choose from one of the points of interest", place_list)
 
 if address_input:
-    address = address_input
+    address = address_input + " Malden MA 02148"
 else:
     address = map_plot.malden_places[location]
 
@@ -77,7 +76,7 @@ if score > 0:
 else:
     text_color = 'black'
 st.sidebar.markdown(f"<h2 style='font-size: 24px; color:{text_color}'>Car Crash Count: {score}</h1>", unsafe_allow_html=True)
-st.sidebar.write("This is the count of nearby car crashes since 2003. These points of interest have high Walk Scores, \
+st.sidebar.write("This is the count of nearby car crashes since 2013. These points of interest have high Walk Scores, \
                   but poor safety. A walkability score needs to include pedestrian safety.") 
 
 lat_0 = float(data[0]["lat"])
