@@ -17,7 +17,7 @@ st.write("Location with nearby car crashes")
 
 
 ########## SIDE BAR - ADDRESS INPUT #############
-address_input = st.sidebar.text_input("Enter a full address in Malden", "244 Main St, Malden 02148")
+address_input = st.sidebar.text_input("Enter a full address in Malden", "422 Main St, Malden 02148")
 
 places_dict = map_plot.malden_places
 place_list = list(places_dict.keys())
