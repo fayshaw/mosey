@@ -30,7 +30,7 @@ malden_places = {
 
 def load_data():    
     folder = 'data_sources/'
-    crash_file =  'export_7_4_2023_16_43_30.csv' # 2003-2023 
+    crash_file =  'export_10_21_2023_19_51_39.csv' # 2003-2023 
     crash_df = pd.read_csv(folder + crash_file, skipfooter=3, engine='python',
                     dtype={'year': 'Int32', 'speed_limit': 'Int32'})
     return crash_df

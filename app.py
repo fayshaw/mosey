@@ -17,7 +17,7 @@ st.write("Location with nearby car crashes")
 
 
 ########## SIDE BAR - ADDRESS INPUT #############
-address_input = st.sidebar.text_input("Enter an address in Malden (i.e. 215 Pleasant St)", "")
+address_input = st.sidebar.text_input("Enter an address in Malden", "")
 
 places_dict = map_plot.malden_places
 place_list = list(places_dict.keys())
@@ -26,7 +26,7 @@ location = st.sidebar.radio(
     "Or choose from one of the points of interest", place_list)
 
 if address_input:
-    address = address_input + " Malden MA 02148"
+    address = address_input # + " Malden MA 02148"
 else:
     address = map_plot.malden_places[location]
 
@@ -38,7 +38,7 @@ data = map_plot.geocode(address).json()
 crash_df = map_plot.load_data()
 m, m22, score = map_plot.plot_points(data, crash_df)
 
-# MAP
+##########  MAP ########## 
 folium_static(m, width=600)
 
 
@@ -61,12 +61,12 @@ st.write("[Pedestrian death is on the rise](https://www.npr.org/2023/06/26/11840
          This project is an examination of walkability with respect to pedestrian safety.  It uses car crash data in the Malden, a city north of Boston \
          with a population of 66,000.")
 
-st.image('data_sources/car_crashes_pedestrian_pct.png', caption='Car crashes over time and pedstrian crashes as a percent of total crashes.')
+st.image('figures/car_crashes_2013-2023.png', caption='Car crashes and pedestrian crashes from 2013 to 2023.')
 
 
 
-st.write("Data from the [Massachusetts Department of Transportation (MassDOT) Crash Data Portal.](https://apps.impact.dot.state.ma.us/cdp/home)")
-st.write("Code on [Github.](https://github.com/fayzer/mosey)")
+st.write("Data from the [Massachusetts Department of Transportation (MassDOT) Crash Data Portal](https://apps.impact.dot.state.ma.us/cdp/home).")
+st.write("Code on [Github](https://github.com/fayzer/mosey).")
 
 
 
