@@ -8,8 +8,6 @@ MOSEY: Move On Safely EverYone
 
 import streamlit as st
 from streamlit_folium import folium_static  # st_folium
-#import sys
-#sys.path.append('source')
 import map_plot
 
 st.header("Move On Safely EverYone (MOSEY)")
