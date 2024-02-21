@@ -41,7 +41,7 @@ rpds-py==0.10.3
 shapely==2.0.1
 six==1.16.0
 smmap==5.0.1
-streamlit==1.6
+streamlit==1.6.0
 streamlit-folium==0.13.0
 tenacity==8.2.3
 toml==0.10.2
