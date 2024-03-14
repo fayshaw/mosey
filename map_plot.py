@@ -13,7 +13,7 @@ import pandas as pd
 import geopandas
 import re
 import os
-#from dotenv import load_dotenv
+from dotenv import load_dotenv
 
 
 malden_places = {
@@ -53,7 +53,7 @@ def get_addr_str(addr_dict):
 
 
 def get_walk_score(lat, lon):
-#    load_dotenv()
+    load_dotenv()
     apikey = os.getenv("WALK_API")
     url = 'http://api.walkscore.com/score?format=json&lat='+str(lat)+'&lon='+str(lon)+'&wsapikey='+apikey
     r = requests.get(url)
