@@ -40,7 +40,7 @@ def geocode(address):
     params = { 'format'        :'json', 
                'addressdetails': 1, 
                'q'             : address}
-    headers = {'user-agent'    : 'TDI' }   #  Need to supply a user agent other than the default provided 
+    headers = {'user-agent'    : 'MOSEY' }   #  Need to supply a user agent other than the default provided 
                                            #  by requests for the API to accept the query.    
     return requests.get('http://nominatim.openstreetmap.org/search', params=params, headers=headers)    
 
@@ -54,7 +54,7 @@ def get_addr_str(addr_dict):
 
 def get_walk_score(lat, lon):
     load_dotenv()
-    apikey = os.getenv("WALK_API")
+    apikey = WALK_API
     url = 'http://api.walkscore.com/score?format=json&lat='+str(lat)+'&lon='+str(lon)+'&wsapikey='+apikey
     r = requests.get(url)
     data = r.json()
