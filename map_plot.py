@@ -13,6 +13,7 @@ import pandas as pd
 import geopandas
 import re
 import os
+import streamlit as st
 from dotenv import load_dotenv
 
 
@@ -54,7 +55,7 @@ def get_addr_str(addr_dict):
 
 def get_walk_score(lat, lon):
     load_dotenv()
-    apikey = WALK_API
+    apikey = st.secrets['WALK_API']
     url = 'http://api.walkscore.com/score?format=json&lat='+str(lat)+'&lon='+str(lon)+'&wsapikey='+apikey
     r = requests.get(url)
     data = r.json()
