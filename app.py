@@ -17,21 +17,33 @@ st.write("Location with nearby car crashes")
 
 
 ########## SIDE BAR - ADDRESS INPUT #############
-address_input = st.sidebar.text_input("Enter a full address in Malden", "422 Main St, Malden 02148")
+def clear_text():
+#    st.session_state.user_input = ""
+    st.session_state["user_input"] = ""
+
+address_input = st.sidebar.text_input("Type the full address in Malden and press enter.", 
+                                      "422 Main St, Malden 02148", key="user_input")
+st.sidebar.button("Clear", on_click=clear_text)
+
+
+#address_input = st.sidebar.text_input("Enter a full address in Malden.", "422 Main St, Malden 02148")
+#st.button("Clear address")
+#if st.button:
+#    address_input.("")
 
 places_dict = map_plot.malden_places
 place_list = list(places_dict.keys())
 
 location = st.sidebar.radio(
-    "Or choose from one of the points of interest", place_list)
+    "To choose from one of the points of interest, clear text box.", place_list)
+address = map_plot.malden_places[location]
 
 if address_input:
     address = address_input # + " Malden MA 02148"
 else:
     address = map_plot.malden_places[location]
-
+       
 ########## END SIDE BAR - ADDRESS INPUT #############
-
 
 data = map_plot.geocode(address).json()  
 
@@ -84,10 +96,18 @@ lon_0 = float(data[0]["lon"])
 
 # Walk score
 walk_score = map_plot.get_walk_score(lat_0, lon_0)
-st.sidebar.markdown(f"<h1 style='font-size: 24px;'>Walk Score: {walk_score}</h1>", unsafe_allow_html=True)
+#st.sidebar.image(['figures/walkscore-api-logo.png'](https://www.walkscore.com/how-it-works/))
+#st.sidebar.markdown(f"<h1 style='font-size: 24px;'>Walk Score&#174: {walk_score}</h1>", unsafe_allow_html=True)
 
-st.sidebar.write("[Walk Score](https://www.walkscore.com) has been developed by Redfin as a measure of walkability. It is largely based \
-                    on proximity to restaurants and other amenities. [Methodology and definitions here.](https://www.walkscore.com/methodology.shtml)")
+
+st.sidebar.markdown(f"<h1 style='font-size: 24px; color:#0476d0'>Walk Score&#174: {walk_score}</h1>", unsafe_allow_html=True)
+
+#large_walkscore = '<p style="color:Blue; font-size: 24px;">New image</p>'
+#st.sidebar.markdown(large_walkscore, unsafe_allow_html=True)
+
+st.sidebar.write('''[Walk Score](https://www.walkscore.com)® has been developed by Redfin as a measure of walkability.
+                 It is largely based on proximity to restaurants and other amenities. 
+                 [Methodology and definitions here.](https://www.walkscore.com/methodology.shtml)''')
 ########## END SIDE BAR #############
 
 
