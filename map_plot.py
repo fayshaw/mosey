@@ -12,9 +12,7 @@ import requests
 import pandas as pd
 import geopandas
 import re
-import os
 import streamlit as st
-from altair import Longitude
 from dotenv import load_dotenv
 
 START_YEAR = 2015
@@ -119,7 +117,6 @@ def plot_points(data, crash_df):
     zone_df = crash_df[crash_lat & crash_lon  & crash_year]
     geo_zone_df, geo_zone_list = get_geo_points(lat_0, lon_0, zone_df)
 
-#    crash_count = zone_df.shape[0] # count number of accidents
     crash_count = len(geo_zone_list) # count number of points
                       
     m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=18)       
@@ -154,28 +151,28 @@ def plot_points(data, crash_df):
 
     # Create point geometries
     geometry_yr = geopandas.points_from_xy(crashes_end_year_df['Latitude'], crashes_end_year_df['Longitude'])
-    geo22_df = geopandas.GeoDataFrame(
+    geoyr_df = geopandas.GeoDataFrame(
         crashes_end_year_df[["Crash Year", "Latitude", "Longitude", "First Harmful Event"]], geometry=geometry_yr
     )   
            
     # drop empty points
-    geo22_df = geo22_df.loc[~geo22_df.geometry.is_empty]
-    geo22_df = geo22_df.dropna(subset=["Latitude", "Longitude"])
+    geoyr_df = geoyr_df.loc[~geoyr_df.geometry.is_empty]
+    geoyr_df = geoyr_df.dropna(subset=["Latitude", "Longitude"])
 
-    geometry22 = geopandas.points_from_xy(geo22_df['Latitude'], geo22_df['Longitude'])
+    geometry_yr = geopandas.points_from_xy(geoyr_df['Latitude'], geoyr_df['Longitude'])
     # Create a geometry list from the GeoDataFrame for all data points
-    geo22_df_list = [[point.x, point.y] for point in geometry22]
+    geoyr_df_list = [[point.x, point.y] for point in geometry_yr]
     
     map_year.add_child(
         folium.Marker(
             location = [lat_0, lon_0], popup=address, icon=folium.Icon(color='blue')        
         ))
 
-    for ind, val in enumerate(geo22_df_list):
-        if geo22_df.iloc[ind]['First Harmful Event'] == 'Collision with pedestrian':
-            folium.CircleMarker(location=geo22_df_list[ind], radius=2, weight=3, color='red').add_to(map_year)
+    for ind, val in enumerate(geoyr_df_list):
+        if geoyr_df.iloc[ind]['First Harmful Event'] == 'Collision with pedestrian':
+            folium.CircleMarker(location=geoyr_df_list[ind], radius=2, weight=3, color='red').add_to(map_year)
         else:
-            folium.CircleMarker(location=geo22_df_list[ind], radius=2, weight=3, color='blue').add_to(map_year)
+            folium.CircleMarker(location=geoyr_df_list[ind], radius=2, weight=3, color='blue').add_to(map_year)
     
     return m, map_year, crash_count
 
