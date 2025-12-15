@@ -14,8 +14,11 @@ import geopandas
 import re
 import os
 import streamlit as st
+from altair import Longitude
 from dotenv import load_dotenv
 
+START_YEAR = 2015
+END_YEAR = 2025
 
 malden_places = {
     'Centre St & Main St'          : '205 Centre St, Malden, MA 02148',
@@ -23,7 +26,6 @@ malden_places = {
     'Centre St & Charles St'       : '185 Centre St, Malden, MA 02148',
     'Beebe School'                 : '401 Pleasant St, Malden, MA 02148',
     'Ferryway School'              : '150 Cross St, Malden, MA 02148',  
-#    'Early Learning Center'        : '257 Mountain Ave, Malden, MA 02148',
     'Malden Center T Station'      : '30 Commercial St, Malden, MA 02148',
     'MA 99 at Broadway Plaza '     : '62 Broadway, Malden, MA 02148',
     }
@@ -31,7 +33,7 @@ malden_places = {
 
 def load_data():    
     folder = 'data_sources/'
-    crash_file =  'export_10_21_2023_19_51_39.csv' # 2003-2023 
+    crash_file =  'Malden_crashesJan2015-1Dec2025.csv' # 2015-2025 crash data
     crash_df = pd.read_csv(folder + crash_file, skipfooter=3, engine='python',
                     dtype={'year': 'Int32', 'speed_limit': 'Int32'})
     return crash_df
@@ -83,13 +85,19 @@ def count_zone_crashes(zone_df, thresh_year):
 
 def get_geo_points(lat_0, lon_0, zone_df):
     # Create point geometries
-    geo_zone_raw = geopandas.points_from_xy(zone_df.lat, zone_df.lon)
+    geo_zone_raw = geopandas.points_from_xy(zone_df['Latitude'], zone_df['Longitude'])
     geo_zone_raw_df = geopandas.GeoDataFrame(
-        zone_df[["year", "lat", "lon", "first_hrmf_event_descr"]], geometry=geo_zone_raw)
-    
+        zone_df[["Crash Year", "Latitude", "Longitude", "First Harmful Event"]], geometry=geo_zone_raw)
+
+    #geo_zone_df, geo_zone_list = get_geo_points(lat_0, lon_0, zone_df)
+    geo_zone_raw_df = geopandas.GeoDataFrame(
+        zone_df[["Crash Year", "Latitude", "Longitude", "First Harmful Event"]],
+        geometry=geo_zone_raw,
+    )
+
     # Drop empty
     geo_zone_df = geo_zone_raw_df.loc[~geo_zone_raw_df.geometry.is_empty]
-    geo_zone = geopandas.points_from_xy(geo_zone_raw_df.lat, geo_zone_df.lon)
+    geo_zone = geopandas.points_from_xy(geo_zone_raw_df['Latitude'], geo_zone_df['Longitude'])
     
     # Create a geometry list from the GeoDataFrame
     geo_zone_list = [(point.x, point.y) for point in geo_zone]
@@ -105,9 +113,9 @@ def plot_points(data, crash_df):
     lon_0 = float(data[0]["lon"])
 
     min_lat, max_lat, min_lon, max_lon = find_box(lat_0, lon_0)
-    crash_lat = crash_df['lat'].between(min_lat, max_lat)
-    crash_lon = crash_df['lon'].between(min_lon, max_lon)
-    crash_year = crash_df['year'] >= 2013
+    crash_lat = crash_df['Latitude'].between(min_lat, max_lat)
+    crash_lon = crash_df['Longitude'].between(min_lon, max_lon)
+    crash_year = crash_df['Crash Year'] >= START_YEAR
     zone_df = crash_df[crash_lat & crash_lon  & crash_year]
     geo_zone_df, geo_zone_list = get_geo_points(lat_0, lon_0, zone_df)
 
@@ -134,40 +142,42 @@ def plot_points(data, crash_df):
 
 
     for ind, val in enumerate(geo_zone_list):
-        if geo_zone_df.iloc[ind]['first_hrmf_event_descr'] == 'Collision with pedestrian':
+        if geo_zone_df.iloc[ind]['First Harmful Event'] == 'Collision with pedestrian':
             folium.CircleMarker(location=geo_zone_list[ind], radius=2, weight=3, color='red').add_to(m)
         else:
             folium.CircleMarker(location=geo_zone_list[ind], radius=2, weight=3, color='blue').add_to(m)
             
-    # This code is to plot all points in 2022
-    crash22_df = crash_df[crash_df['year'] == 2022]    
-    m22 = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=15)
+    # This code is to plot all points in a year
+    crashes_end_year_df = crash_df[crash_df['Crash Year'] == END_YEAR]
+    map_year = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=15)
     #                zoom_control=False, scrollWheelZoom=False, dragging=False)   # uncomment to freeze      
 
     # Create point geometries
-    geometry22 = geopandas.points_from_xy(crash22_df.lat, crash22_df.lon)
+    geometry_yr = geopandas.points_from_xy(crashes_end_year_df['Latitude'], crashes_end_year_df['Longitude'])
     geo22_df = geopandas.GeoDataFrame(
-        crash22_df[["year", "lat", "lon", "first_hrmf_event_descr"]], geometry=geometry22
+        crashes_end_year_df[["Crash Year", "Latitude", "Longitude", "First Harmful Event"]], geometry=geometry_yr
     )   
            
     # drop empty points
     geo22_df = geo22_df.loc[~geo22_df.geometry.is_empty]
-    geometry22 = geopandas.points_from_xy(geo22_df.lat, geo22_df.lon)
+    geo22_df = geo22_df.dropna(subset=["Latitude", "Longitude"])
+
+    geometry22 = geopandas.points_from_xy(geo22_df['Latitude'], geo22_df['Longitude'])
     # Create a geometry list from the GeoDataFrame for all data points
     geo22_df_list = [[point.x, point.y] for point in geometry22]
     
-    m22.add_child(
+    map_year.add_child(
         folium.Marker(
             location = [lat_0, lon_0], popup=address, icon=folium.Icon(color='blue')        
-        ))  
+        ))
 
     for ind, val in enumerate(geo22_df_list):
-        if geo22_df.iloc[ind]['first_hrmf_event_descr'] == 'Collision with pedestrian':
-            folium.CircleMarker(location=geo22_df_list[ind], radius=2, weight=3, color='red').add_to(m22)
+        if geo22_df.iloc[ind]['First Harmful Event'] == 'Collision with pedestrian':
+            folium.CircleMarker(location=geo22_df_list[ind], radius=2, weight=3, color='red').add_to(map_year)
         else:
-            folium.CircleMarker(location=geo22_df_list[ind], radius=2, weight=3, color='blue').add_to(m22)
+            folium.CircleMarker(location=geo22_df_list[ind], radius=2, weight=3, color='blue').add_to(map_year)
     
-    return m, m22, crash_count
+    return m, map_year, crash_count
 
 
 
@@ -184,6 +194,6 @@ if __name__ == '__main__':
 
     addr_str = get_addr_str(data[0]['address'])    
     crash_df = load_data()
-    m, m22, score = plot_points(data, crash_df)    
+    m, map_year, score = plot_points(data, crash_df)
     m.save(addr_str + '_map.html')  # save file with address
 

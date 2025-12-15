@@ -48,33 +48,49 @@ else:
 data = map_plot.geocode(address).json()  
 
 crash_df = map_plot.load_data()
-m, m22, score = map_plot.plot_points(data, crash_df)
+m, map_year, score = map_plot.plot_points(data, crash_df)
 
 ##########  MAP ########## 
 folium_static(m, width=600)
 
 
 st.subheader("Interactive Map of Malden")
-st.write("Map with 2022 car crash data")
+st.write("Map with car crash data from January - November 2025")
+folium_static(map_year, width=600)
 
-folium_static(m22, width=600)
-st.caption("Car crash data for 2022. Blue dots indicate car crashes\
-           and red dots indicate car crashes with pedestrians.")
-           
+st.markdown(
+    """
+    <style>
+    .my-caption {
+        color: #000000;
+        font-size: 0.85rem;
+        opacity: 0.8;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-st.caption("Map of Malden centered around the address input.  The gray box indicates search space for \
+st.markdown('<div class="my-caption">Car crash data for 2025, map centered at the address input. Blue dots indicate car crashes\
+           and red dots indicate car crashes with pedestrians. The gray box indicates search space for \
            car accidents that go into the MOSEY calculation. Blue dots indicate car crashes\
-           and red dots indicate car crashes with pedestrians.")
+           and red dots indicate car crashes with pedestrians.</div>', unsafe_allow_html=True)
+
+
+#st.caption("Car crash data for 2025, map centered at the address input. Blue dots indicate car crashes\
+#           and red dots indicate car crashes with pedestrians. The gray box indicates search space for \
+#           car accidents that go into the MOSEY calculation. Blue dots indicate car crashes\
+#           and red dots indicate car crashes with pedestrians.")
 
 
 st.subheader("Motivation")
-st.write("[Pedestrian death is on the rise](https://www.npr.org/2023/06/26/1184034017/us-pedestrian-deaths-high-traffic-car) in the US.\
+st.write("[Pedestrian death peaked in 2022 ](https://www.npr.org/2023/06/26/1184034017/us-pedestrian-deaths-high-traffic-car) in the US.\
          Massachussets reported a [35% increase in pedestrian death in 2022.](https://storymaps.arcgis.com/stories/5ef0c0ec60764c85a7e6ace69b752fd4)\
          This project is an examination of walkability with respect to pedestrian safety.  It uses car crash data in the Malden, a city north of Boston \
          with a population of 66,000.")
 
-st.image('figures/car_crashes_2013-2023.png', caption='Car crashes and pedestrian crashes from 2013 to 2023.')
-
+#st.image('figures/car_crashes_2013-2023.png', caption='Car crashes and pedestrian crashes from 2013 to 2023.')
+st.image('figures/Malden_crashes_2015-2025.png', caption='Car crashes and pedestrian crashes from 2015 to 2025.')
 
 
 st.write("Data from the [Massachusetts Department of Transportation (MassDOT) Crash Data Portal](https://apps.impact.dot.state.ma.us/cdp/home).")
