@@ -106,7 +106,7 @@ st.markdown(' - Nearly two-thirds (65%) of pedestrian deaths occurred in locatio
 #st.markdown(' - [Pedestrian death peaked in 2022 ](https://www.npr.org/2023/06/26/1184034017/us-pedestrian-deaths-high-traffic-car) in the US.\
 #         Massachussetts reported a [35% increase in pedestrian death in 2022.](https://storymaps.arcgis.com/stories/5ef0c0ec60764c85a7e6ace69b752fd4)')
 
-st.image('figures/GHSA_2023 Pedestrian Deaths by the Numbers.jpg')
+st.image('figures/GHSA_2023_Pedestrian_Deaths_by_the_Numbers.jpg')
 st.markdown(
     '<span style="font-size: 0.85rem;">'
     'Pedestrian deaths in 2023, figure from the GHSA \
