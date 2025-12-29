@@ -26,8 +26,9 @@ st.sidebar.button("Clear", on_click=clear_text)
 places_dict = map_plot.malden_places
 place_list = list(places_dict.keys())
 
-location = st.sidebar.radio(
-    "To choose from one of the points of interest, clear text box.", place_list)
+st.sidebar.write("To choose from one of the points of interest, clear the text box.")
+st.sidebar.markdown("# Points of Interest")
+location = st.sidebar.radio("Points of Interest", place_list, label_visibility="collapsed")
 address = map_plot.malden_places[location]
 
 if address_input:
@@ -45,9 +46,12 @@ m, map_year, score = map_plot.plot_points(data, crash_df)
 ##########  MAP ########## 
 
 st.subheader("Malden location with nearby car crashes.")
-st.write("Input an address or choose a point of interest from the sidebar to visualize the number of \
-nearby car crashes. This shows car crashes from 2015 - 2025.")
+st.write("⬅️ In the sidebar, input an address or choose a point of interest to visualize the number of \
+nearby car crashes from 2015-2025 (red number).")
 folium_static(m, width=600)
+st.markdown('<div class="my-caption">Map centered at input address with crashes for January 2015 - November 2025. \
+            Blue dots indicate car crashes and red dots indicate car crashes with pedestrians.<br><br></div>', unsafe_allow_html=True)
+
 
 st.subheader("Interactive Map of Malden")
 st.write("Map with car crash data from January - November 2025")
@@ -79,7 +83,7 @@ st.write("Car crash data is from the [Massachusetts Department of Transportation
 
 st.subheader("Motivation")
 
-st.markdown('**US stats**')
+st.markdown('##### US stats')
 st.write("Pedestrian death in the US has risen at an alarming rate, peaking in 2022, a \
 [40-year-high](https://www.npr.org/2023/06/26/1184034017/us-pedestrian-deaths-high-traffic-car). \
 This figure shows pedestrian fatalities from 1980-2022 and is from the Governers Highway Safety Association (GSHA)'s report \
@@ -96,13 +100,13 @@ st.image('figures/GHSA_ped_death_1980-2022.png')
 #st.markdown('<div class="my-caption">Pedestrian death in the US from 1980 to 2022, figure from the \
 #GHSA [Pedestrian Traffic Fatalities by State: 2024 Preliminary Data](https://www.ghsa.org/resource-hub/pedestrian-traffic-fatalities-2024-data)</div>', unsafe_allow_html=True)
 
-st.markdown('**Findings from the GHSA 2024 report**')
+st.markdown('**Findings from the [(GHSA 2024 report)](https://www.ghsa.org/resource-hub/pedestrian-traffic-fatalities-2024-data)**')
 st.markdown(' - Drivers struck and killed 7,148 people walking in the United States in 2024.')
 st.markdown(' - Pedestrian deaths are increasing at a rate far faster than overall traffic fatalities. Between 2009 and 2023, pedestrian deaths rose a staggering 80%, while all other traffic fatalities increased 13%. ')
 st.markdown(' - One in four pedestrian deaths (25%) is the result of a hit-and-run crash. In these fatal hit-and-runs, the vehicle that struck the pedestrian was the fleeing vehicle the vast majority (94%) of the time.')
-st.markdown(' - The share of pedestrian deaths caused by SUVs and pickups has surged in recent years. Light trucks accounted for 54% of pedestrian fatalities where a vehicle type was known in 2023, compared to 37% for passenger cars.[(GHSA, 2024)](https://www.ghsa.org/resource-hub/pedestrian-traffic-fatalities-2024-data)')
-st.markdown(' - More than three-quarters of pedestrian fatalities occur after dark. The share of nighttime deaths has skyrocketed recently. Fatal pedestrian crashes at night rose 84% between 2010 and 2023, compared to a 28% increase in daytime fatalities. [(GHSA, 2024)](https://www.ghsa.org/resource-hub/pedestrian-traffic-fatalities-2024-data)')
-st.markdown(' - Nearly two-thirds (65%) of pedestrian deaths occurred in locations without a sidewalk in 2023. Sidewalks can help protect people walking by providing a physical separation between them and motor vehicle traffic, but they are missing or in poor condition in many parts of the country.[(GHSA, 2024)](https://www.ghsa.org/resource-hub/pedestrian-traffic-fatalities-2024-data)')
+st.markdown(' - The share of pedestrian deaths caused by SUVs and pickups has surged in recent years. Light trucks accounted for 54% of pedestrian fatalities where a vehicle type was known in 2023, compared to 37% for passenger cars.')
+st.markdown(' - More than three-quarters of pedestrian fatalities occur after dark. The share of nighttime deaths has skyrocketed recently. Fatal pedestrian crashes at night rose 84% between 2010 and 2023, compared to a 28% increase in daytime fatalities.')
+st.markdown(' - Nearly two-thirds (65%) of pedestrian deaths occurred in locations without a sidewalk in 2023. Sidewalks can help protect people walking by providing a physical separation between them and motor vehicle traffic, but they are missing or in poor condition in many parts of the country.')
 #st.markdown(' - [Pedestrian death peaked in 2022 ](https://www.npr.org/2023/06/26/1184034017/us-pedestrian-deaths-high-traffic-car) in the US.\
 #         Massachussetts reported a [35% increase in pedestrian death in 2022.](https://storymaps.arcgis.com/stories/5ef0c0ec60764c85a7e6ace69b752fd4)')
 
@@ -113,7 +117,7 @@ st.markdown(
     [Pedestrian Traffic Fatalities by State: 2024 Preliminary Data](https://www.ghsa.org/resource-hub/pedestrian-traffic-fatalities-2024-data)</span><br>',
     unsafe_allow_html=True)
 
-st.markdown('**Massachussets stats**')
+st.markdown('##### Massachussets stats')
 st.markdown(' - Older adult pedestrians were hit and killed at a higher rate than those in other age groups. 37.2% of pedestrian fatal \
 crash victims were 65 or older, while this age group represents only 18.5% of the Commonwealth’s total population.')
 st.markdown(" - Two of every three (66.7%) fatal pedestrian crashes took place in Environmental Justice Census Block Groups. \
