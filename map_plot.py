@@ -1,10 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Crash Data Visualization and Mapping Module for MOSEY.
 
-Created on Thu Sep 21 08:44:28 2023
+This module provides functions to geocode addresses, load crash data from
+MassDOT, and generate interactive Folium maps showing car crashes and
+pedestrian collisions within a specified radius of a given location in
+Malden, MA.
 
-@author: fayshaw
+Main functionality:
+    - Geocode addresses using OpenStreetMap Nominatim API
+    - Load and filter crash data from CSV (2015-2025)
+    - Create interactive maps with crash markers (blue=vehicle, red=pedestrian)
+    - Calculate Walk Scores for locations
+    - Generate zone-based and year-specific crash visualizations
+
+Typical usage:
+    crash_df = load_data()
+    data = geocode("422 Main St, Malden, MA 02148").json()
+    m, map_year, crash_count = plot_points(data, crash_df)
+
+Author: fayshaw
 """
 
 import folium
@@ -17,6 +33,7 @@ from dotenv import load_dotenv
 
 START_YEAR = 2015
 END_YEAR = 2025
+SEARCH_RADIUS = 2000  # feet
 
 malden_places = {
     'Centre St & Main St'          : '205 Centre St, Malden, MA 02148',
@@ -29,7 +46,8 @@ malden_places = {
     }
 
 
-def load_data():    
+def load_data():
+    """Load crash data from CSV file"""
     folder = 'data_sources/'
     crash_file =  'Malden_crashesJan2015-1Dec2025.csv' # 2015-2025 crash data
     crash_df = pd.read_csv(folder + crash_file, skipfooter=3, engine='python',
@@ -37,16 +55,19 @@ def load_data():
     return crash_df
 
 
-def geocode(address):
-    params = { 'format'        :'json', 
+def geocode(address: str) -> requests.Response:
+    """Geocode address using OpenStreetMap"""
+    # add try/except for network errors
+    params = { 'format'        :'json',
                'addressdetails': 1, 
                'q'             : address}
-    headers = {'user-agent'    : 'MOSEY' }   #  Need to supply a user agent other than the default provided 
-                                           #  by requests for the API to accept the query.    
+    headers = {'user-agent'    : 'MOSEY' }  #  Need to supply a user agent other than the default provided by
+                                            #  requests for the API to accept the query.
     return requests.get('http://nominatim.openstreetmap.org/search', params=params, headers=headers)    
 
 
 def get_addr_str(addr_dict):
+    """Return a string of the address with spaces replaced by underscores"""
     num = addr_dict['house_number']    
     new_road = re.sub(" ", "_", addr_dict['road'])
     addr_str = num + '_' + new_road
@@ -54,6 +75,7 @@ def get_addr_str(addr_dict):
 
 
 def get_walk_score(lat, lon):
+    """Get walkability score from WalkScore API"""
     load_dotenv()
     apikey = st.secrets['WALK_API']
     url = 'http://api.walkscore.com/score?format=json&lat='+str(lat)+'&lon='+str(lon)+'&wsapikey='+apikey
@@ -63,31 +85,27 @@ def get_walk_score(lat, lon):
 
 
 def find_box(lat, lon):    
+    """Get latitude and longitiude box around lat, lon within SEARCH_RADIUS (feet)"""
     lat_conv = 0.000000274    #lat: 1 ft = 0.000000274 deg
     lon_conv = 0.000000347    #lon: 1 ft = 0.000000347 deg
     
-    delta = 2000 # feet - units seem off
-    d_lat = delta * lat_conv
-    d_lon = delta * lon_conv
+    d_lat = SEARCH_RADIUS * lat_conv
+    d_lon = SEARCH_RADIUS * lon_conv
     
     return(lat-d_lat, lat+d_lat, lon-d_lon, lon+d_lon)
 
 
-def count_zone_crashes(zone_df, thresh_year):    
+def count_zone_crashes(zone_df, thresh_year):
+    """Count number of crashes in zone_df after thresh_year"""
     thresh_zone_df = zone_df[zone_df['year'] >= thresh_year] 
     crash_count = thresh_zone_df.shape[0] # count number of accidents
         
-    # can try different scores
     return crash_count
 
 
 def get_geo_points(lat_0, lon_0, zone_df):
-    # Create point geometries
+    """Create a GeoDataFrame of points from zone_df and return a list of coordinates """
     geo_zone_raw = geopandas.points_from_xy(zone_df['Latitude'], zone_df['Longitude'])
-    geo_zone_raw_df = geopandas.GeoDataFrame(
-        zone_df[["Crash Year", "Latitude", "Longitude", "First Harmful Event"]], geometry=geo_zone_raw)
-
-    #geo_zone_df, geo_zone_list = get_geo_points(lat_0, lon_0, zone_df)
     geo_zone_raw_df = geopandas.GeoDataFrame(
         zone_df[["Crash Year", "Latitude", "Longitude", "First Harmful Event"]],
         geometry=geo_zone_raw,
@@ -95,7 +113,7 @@ def get_geo_points(lat_0, lon_0, zone_df):
 
     # Drop empty
     geo_zone_df = geo_zone_raw_df.loc[~geo_zone_raw_df.geometry.is_empty]
-    geo_zone = geopandas.points_from_xy(geo_zone_raw_df['Latitude'], geo_zone_df['Longitude'])
+    geo_zone = geopandas.points_from_xy(geo_zone_df['Latitude'], geo_zone_df['Longitude'])
     
     # Create a geometry list from the GeoDataFrame
     geo_zone_list = [(point.x, point.y) for point in geo_zone]
@@ -103,6 +121,7 @@ def get_geo_points(lat_0, lon_0, zone_df):
 
 
 def plot_points(data, crash_df):
+    """Plots an address on the map"""
     address = data[0]['address']['house_number'] + ' ' + data[0]['address']['road']
     zone_df = pd.DataFrame()
 
@@ -137,7 +156,7 @@ def plot_points(data, crash_df):
         fill_opacity=0.2
     ).add_to(m)
 
-
+    # Extract as function - pedestrian indicator
     for ind, val in enumerate(geo_zone_list):
         if geo_zone_df.iloc[ind]['First Harmful Event'] == 'Collision with pedestrian':
             folium.CircleMarker(location=geo_zone_list[ind], radius=2, weight=3, color='red').add_to(m)
@@ -168,6 +187,7 @@ def plot_points(data, crash_df):
             location = [lat_0, lon_0], popup=address, icon=folium.Icon(color='blue')        
         ))
 
+    # Extract as function - pedestrian indicator
     for ind, val in enumerate(geoyr_df_list):
         if geoyr_df.iloc[ind]['First Harmful Event'] == 'Collision with pedestrian':
             folium.CircleMarker(location=geoyr_df_list[ind], radius=2, weight=3, color='red').add_to(map_year)
@@ -179,7 +199,6 @@ def plot_points(data, crash_df):
 
 
 if __name__ == '__main__':
-
     data = []
     address = input("Enter an address: ")
     data = geocode(address).json()
