@@ -1,10 +1,16 @@
-# Raw files
-data_sources/
-
-# Directories
+# data_sources/
+archive_data
+db/
 exploratory/
+GIS/
+MA_GIS_data
 output/
-figures/
+plan/
+plots/
+related_work/
+reports/
+reports_FS/
+screenshots/
 
 # Python
 __pycache__/
