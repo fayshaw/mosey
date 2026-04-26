@@ -1,3 +1,20 @@
-.idea
-**/__pycache__/
-**/*.pyc
+# Raw files
+data_sources/
+
+# Directories
+exploratory/
+output/
+figures/
+
+# Python
+__pycache__/
+*.py[cod]
+.env
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
