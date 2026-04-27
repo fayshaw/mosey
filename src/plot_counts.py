@@ -49,35 +49,6 @@ def plot_crashes_over_time(counts_df, OUT_DIR,
     print(f"Saved {path.name}")
 
 
-def plot_crashes_over_time_annotate(counts_df, out_dir,
-                                    include_crashes=True, include_ped=True, include_cycle=True,
-                                    include_ped_fatal=False, include_cycle_fatal=False):
-    """Line chart with count labels above fatal crash data points."""
-    include = {
-        'crash_counts': include_crashes, 'ped_counts': include_ped,
-        'ped_fatal_counts': include_ped_fatal, 'cycle_counts': include_cycle,
-        'cycle_fatal_counts': include_cycle_fatal,
-    }
-    fig, ax = plt.subplots(figsize=(10, 5))
-    for col, style in PLOT_STYLES.items():
-        if include.get(col) and col in counts_df.columns:
-            marker = style.get('marker', 'o')
-            ax.plot(counts_df[col], f'{marker}-', color=style['color'],
-                    label=style['label'], linewidth=2)
-            if 'fatal' in col:
-                for year, value in counts_df[col].items():
-                    ax.text(year, value + 0.1, str(int(value)),
-                            ha='center', va='bottom', fontsize=8)
-    ax.set_xlabel('Year')
-    ax.set_ylabel('Number of Crashes')
-    ax.set_title('Car Crashes in Malden')
-    ax.grid(True, alpha=0.3)
-    ax.legend(loc='upper left')
-    plt.tight_layout()
-    path = out_dir / 'crash_trends_annotate.png'
-    plt.savefig(path)
-    plt.close()
-    print(f"Saved {path.name}")
 
 
 def plot_crashes_subplots(counts_df, out_dir):

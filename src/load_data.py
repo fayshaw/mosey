@@ -19,9 +19,9 @@ def ingest_csv_to_db(csv_path=CRASH_FILE, db_path=DB_PATH):
     df = pd.read_csv(csv_path, skipfooter=5, engine='python')
     df = df.dropna(subset=['Crash Number'])  # remove any remaining footer/empty rows
 
-    # Parse 2-digit year format: 12/1/25 → 2025-12-01
+    # Parse dates — handles both 2-digit (12/1/25) and 4-digit (03/20/2002) year formats
     df['Crash Date'] = pd.to_datetime(
-        df['Crash Date'], format='%m/%d/%y'
+        df['Crash Date'], format='mixed', dayfirst=False
     ).dt.strftime('%Y-%m-%d')
 
     # Keep only mapped columns, rename to DB names
@@ -44,16 +44,26 @@ def ingest_csv_to_db(csv_path=CRASH_FILE, db_path=DB_PATH):
     print(f"Database now contains {total:,} rows.")
 
 
-def load_crashes_from_db(db_path=DB_PATH, start_year=None, end_year=None):
+def load_crashes_from_db(db_path=DB_PATH, start_year=None, end_year=None,
+                         malden_only=False):
     """
     Load crash data from the database into a DataFrame.
-    Optionally filter by year range.
+
+    Parameters
+    ----------
+    start_year  : int, optional  — only return crashes from this year onward
+    end_year    : int, optional  — only return crashes up to and including this year
+    malden_only : bool           — if True, only return rows where in_malden = 1
+                                   (excludes crashes outside the boundary and those
+                                   with no coordinates)
     """
     conditions = []
     if start_year:
         conditions.append(f"crash_year >= {int(start_year)}")
     if end_year:
         conditions.append(f"crash_year <= {int(end_year)}")
+    if malden_only:
+        conditions.append("in_malden = 1")
 
     query = "SELECT * FROM Crashes"
     if conditions:

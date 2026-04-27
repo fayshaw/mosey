@@ -28,30 +28,6 @@ def plot_malden_boundary(malden_gdf, ax=None):
     malden_gdf.plot(ax=ax, color='whitesmoke', edgecolor='black', linewidth=1)
     return fig, ax
 
-'''
-def plot_crashes_spatial(crash_gdf, ped_gdf, bike_gdf, malden_gdf, title='Malden Crashes',
-                         save_path=None):
-    """
-    Spatial crash map: Malden boundary + all crashes (blue) +
-    pedestrian crashes (red) + cyclist crashes (orange triangle).
-    Requires geopandas GeoDataFrames.
-    """
-    from src.filter_crashes import filter_crashes, crashes_to_geodataframe
-
-    fig, ax = plot_malden_boundary(malden_gdf)
-    crash_gdf.plot(ax=ax, color='blue',   markersize=4,  alpha=0.3, label='All crashes')
-    ped_gdf.plot( ax=ax, color='red',    markersize=10, alpha=0.7, label='Pedestrian')
-    bike_gdf.plot(ax=ax, color='orange', markersize=10, alpha=0.7, label='Cyclist',
-                  marker='^')
-    ax.set_title(title)
-    ax.legend()
-    plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=150)
-        print(f"Saved {save_path}")
-    return fig, ax
-'''
-
 
 def plot_crashes_spatial(crash_df, malden_gdf, title='Malden Crashes', save_path=None):
     """
@@ -77,11 +53,11 @@ def plot_crashes_spatial(crash_df, malden_gdf, title='Malden Crashes', save_path
 
     # Plot
     fig, ax = plot_malden_boundary(malden_gdf)
-    crash_gdf.plot(ax=ax, color='blue', markersize=4, alpha=0.3, label='All crashes')
-    ped_gdf.plot(ax=ax, color='red', markersize=10, alpha=0.7, label='Pedestrian')
-    cycle_gdf.plot(ax=ax, color='orange', markersize=10, alpha=0.7, label='Cyclist', marker='^')
+    crash_gdf.plot(ax=ax, color='blue', markersize=10, alpha=0.4, label='All crashes')
+    ped_gdf.plot(ax=ax, color='red', markersize=12, alpha=0.7, label='Pedestrian')
+    cycle_gdf.plot(ax=ax, color='orange', markersize=12, alpha=0.7, label='Cyclist', marker='^')
     ax.set_title(title)
-    ax.legend()
+    ax.legend(loc='lower right')
     plt.tight_layout()
     if save_path:
         plt.savefig(save_path, dpi=150)

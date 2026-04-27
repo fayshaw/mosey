@@ -59,7 +59,8 @@ CREATE TABLE IF NOT EXISTS Crashes (
     traffic_ctrl_device_type    TEXT,
     trafficway_description      TEXT,
     geocoding_method            TEXT,
-    crash_report_ids            TEXT
+    crash_report_ids            TEXT,
+    in_malden                   INTEGER DEFAULT NULL
 )
 """
 
@@ -71,9 +72,28 @@ def create_schema(db_path=DB_PATH):
     conn.execute(CREATE_TABLE)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_crash_year ON Crashes(crash_year)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_lat_lon ON Crashes(latitude, longitude)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_in_malden ON Crashes(in_malden)")
     conn.commit()
     conn.close()
     print(f"Schema created: {db_path}")
+
+
+def add_malden_column(db_path=DB_PATH):
+    """
+    Add the in_malden column to an existing Crashes table.
+    Safe to call on a table that already has the column — does nothing in that case.
+    Run backfill_malden_flag() after this to populate the values.
+    """
+    conn = sqlite3.connect(db_path)
+    existing = [row[1] for row in conn.execute("PRAGMA table_info(Crashes)")]
+    if 'in_malden' not in existing:
+        conn.execute("ALTER TABLE Crashes ADD COLUMN in_malden INTEGER DEFAULT NULL")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_in_malden ON Crashes(in_malden)")
+        conn.commit()
+        print("Added in_malden column and index.")
+    else:
+        print("in_malden column already exists — skipping.")
+    conn.close()
 
 
 if __name__ == '__main__':
