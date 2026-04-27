@@ -59,6 +59,7 @@ CRASH_TYPES = {
 if __name__ == '__main__':
     malden_gdf = load_malden_boundary()
 
+    """
     # ── Time-series counts (all Malden crashes, full date range) ──────────────
     print("Loading crash data from database...")
     crash_df = load_crashes_from_db(DB_PATH, start_year=2002, malden_only=True)
@@ -73,15 +74,10 @@ if __name__ == '__main__':
     all_counts_df = all_counts_df.fillna(0).astype(int)
     all_counts_df.to_csv(OUT_DIR / 'crash_counts_by_year.csv')
     print("Saved crash_counts_by_year.csv")
+    
 
     plot_crashes_subplots_bar(all_counts_df, OUT_DIR)
-
-    # ── Top 5 worst intersections for pedestrians and cyclists ───────────────
-    hotspots = top_intersections(crash_df, n=5)
-    print("\nTop 5 worst intersections (pedestrians + cyclists, 2002–present):")
-    print(hotspots.to_string(index=False))
-    hotspots.to_csv(OUT_DIR / 'top_intersections.csv', index=False)
-    print("Saved top_intersections.csv")
+    """
 
     # ── Spatial map (recent years, Malden boundary only) ─────────────────────
 
