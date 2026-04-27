@@ -41,9 +41,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.constants import DB_PATH, OUT_DIR
 from src.load_data import load_crashes_from_db, load_malden_boundary
-from src.plot_counts import plot_crashes_over_time, plot_crashes_subplots_bar, plot_crashes_over_time_annotate
+from src.plot_counts import plot_crashes_over_time, plot_crashes_subplots_bar
 from src.filter_crashes import filter_crashes
-from src.crash_utils import get_counts, split_data_years, split_data_years
+from src.crash_utils import get_counts, split_data_years, top_intersections
 from src.plot_spatial import plot_crashes_spatial
 
 CRASH_TYPES = {
@@ -57,12 +57,13 @@ CRASH_TYPES = {
 }
 
 if __name__ == '__main__':
-    print("Loading crash data from database...")
-    crash_df = load_crashes_from_db(DB_PATH, start_year=2015)
-    print(f"Loaded {len(crash_df):,} rows ({crash_df['crash_year'].min()}–{crash_df['crash_year'].max()})")
+    malden_gdf = load_malden_boundary()
 
-    # split_data_years(crash_df, OUT_DIR)
-    print("Saved per-year CSVs to output/")
+    # ── Time-series counts (all Malden crashes, full date range) ──────────────
+    print("Loading crash data from database...")
+    crash_df = load_crashes_from_db(DB_PATH, start_year=2002, malden_only=True)
+    print(f"Loaded {len(crash_df):,} Malden crashes "
+          f"({crash_df['crash_year'].min()}–{crash_df['crash_year'].max()})")
 
     all_counts_df = pd.DataFrame()
     for crash_type, criteria in CRASH_TYPES.items():
@@ -74,8 +75,26 @@ if __name__ == '__main__':
     print("Saved crash_counts_by_year.csv")
 
     plot_crashes_subplots_bar(all_counts_df, OUT_DIR)
-    plot_crashes_over_time_annotate(all_counts_df, OUT_DIR)
-    malden_gdf = load_malden_boundary()
-    crash_df = load_crashes_from_db(start_year=2021)
 
-    plot_crashes_spatial(crash_df, malden_gdf, save_path=OUT_DIR / 'crashes.png')
+    # ── Top 5 worst intersections for pedestrians and cyclists ───────────────
+    hotspots = top_intersections(crash_df, n=5)
+    print("\nTop 5 worst intersections (pedestrians + cyclists, 2002–present):")
+    print(hotspots.to_string(index=False))
+    hotspots.to_csv(OUT_DIR / 'top_intersections.csv', index=False)
+    print("Saved top_intersections.csv")
+
+    # ── Spatial map (recent years, Malden boundary only) ─────────────────────
+
+    years = [2021, 2022, 2023, 2024, 2025]
+    for year in years:
+        map_df = load_crashes_from_db(DB_PATH, start_year=year, end_year=year, malden_only=True)
+        print(f"\nPlotting {len(map_df):,} crashes on the map for: {year}.")
+
+        plot_crashes_spatial(
+            map_df, malden_gdf,
+            title=f'Malden Car Crashes {year}',
+            save_path=OUT_DIR / f'crashes_spatial_{year}.png'
+        )
+
+    # TODO: walk audit map — add when walk_audit.py pipeline is complete
+    # plot_walk_audit_map(gdf_points, gdf_lines, malden_gdf, malden_roads, RATING_COLOR)
