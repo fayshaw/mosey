@@ -70,6 +70,39 @@ CRS_MASS_STATE_PLANE = "EPSG:26986"
 RATING_VALUE = {'Great': 4, 'Acceptable': 3, 'Mixed': 2, 'Poor': 1}
 RATING_COLOR = {'Great': 'darkgreen', 'Acceptable': 'lightgreen', 'Mixed': 'gold', 'Poor': 'red'}
 
+# Malden-specific street name corrections applied after parsing.
+# Keys are title-cased names; values are the canonical form.
+# Add entries here whenever a survey response uses the wrong or missing suffix.
+MALDEN_STREET_CORRECTIONS = {
+    # Missing suffixes on primary (along) streets
+    'Main':          'Main St',
+    'Summer':        'Summer St',
+    'Salem':         'Salem St',
+    'Lebanon':       'Lebanon St',
+    # Wrong suffix in survey responses
+    'Bell Rock Ave': 'Bell Rock St',
+    # Cross streets (begin/end) that frequently lose their suffix
+    'Canal':         'Canal St',
+    'Medford':       'Medford St',
+    'Highland':      'Highland Ave',
+    'Eastern':       'Eastern Ave',
+    'Willow':        'Willow St',
+    'Bryant':        'Bryant St',
+    'Earl':          'Earl St',
+    'Ferry':         'Ferry St',
+    'Glenwood':      'Glenwood St',
+    'Wyllis':        'Wyllis Ave',
+    'Charles':       'Charles St',
+    'Commercial':    'Commercial St',
+    'Forest':        'Forest St',
+    'Forrest':       'Forrest St',
+    'Cross':         'Cross St',
+    'Center':        'Center St',
+    'Converse':      'Converse Ave',
+    'Pearl':         'Pearl St',
+    'Maple':         'Maple St',
+}
+
 # Walk audit column question strings (must match the spreadsheet headers exactly)
 WALK_AUDIT_NAME_Q      = "If you would like to be contacted for follow ups, please share your name. If in a group, share everyone's name separated by commas."
 WALK_AUDIT_WARD_Q      = "What Ward are you Walking in? (Optional)"

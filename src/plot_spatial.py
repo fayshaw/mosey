@@ -28,13 +28,15 @@ def plot_malden_boundary(malden_gdf, ax=None, figsize=(12, 10)):
     return fig, ax
 
 
-def plot_crashes_spatial(crash_df, malden_gdf, title='Malden Crashes', save_path=None, figsize=(14, 10)):
+def plot_crashes_spatial(crash_df, malden_gdf, malden_roads=None,
+                         title='Malden Crashes', save_path=None, figsize=(14, 10)):
     """
-    Spatial crash map: Malden boundary + all crashes (blue) +
-    pedestrian crashes (red) + cyclist crashes (orange triangle).
+    Spatial crash map: Malden boundary + optional road network (gray) +
+    all crashes (blue) + pedestrian crashes (red) + cyclist crashes (orange triangle).
 
     Automatically filters crash_df into ped/bike subsets.
     Requires crash_df to have latitude/longitude (converts to GeoDataFrame internally).
+    malden_roads is optional; pass the output of load_malden_roads() to include it.
     """
     from src.filter_crashes import filter_crashes, crashes_to_geodataframe
     from src.constants import CRS
@@ -54,10 +56,12 @@ def plot_crashes_spatial(crash_df, malden_gdf, title='Malden Crashes', save_path
 
     # Plot
     fig, ax = plot_malden_boundary(malden_gdf, figsize=figsize)
+    if malden_roads is not None:
+        malden_roads.plot(ax=ax, color='gray', linewidth=0.5, alpha=0.7)
     crash_gdf.plot(ax=ax, color='blue', markersize=10, alpha=0.5, label='All crashes')
     ped_gdf.plot(ax=ax, color='red', markersize=30, label='Pedestrian')
     if not ped_fatal_gdf.empty:
-        ped_fatal_gdf.plot(ax=ax, color='darkred', markersize=80, label='Fatal pedestrian', marker='x') #, edgecolor='yellow', linewidth=1)
+        ped_fatal_gdf.plot(ax=ax, color='darkred', markersize=80, label='Fatal pedestrian', marker='x')
     cycle_gdf.plot(ax=ax, color='orange', markersize=30, label='Cyclist', marker='^')
     ax.set_title(title, fontsize=18, fontweight='bold', pad=20)
     ax.legend(loc='lower right', fontsize=13)
@@ -95,7 +99,7 @@ def plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads,
     for rating, color in RATING_COLOR.items():
         subset = gdf_lines[gdf_lines[WALK_AUDIT_OVERALL_Q] == rating]
         if not subset.empty:
-            subset.plot(ax=ax, color=color, linewidth=2, alpha=0.6)
+            subset.plot(ax=ax, color=color, linewidth=5, alpha=0.7)
 
     for rating, color in RATING_COLOR.items():
         subset = gdf_all[gdf_all[WALK_AUDIT_OVERALL_Q] == rating]

@@ -9,6 +9,7 @@ import pandas as pd
 from src.constants import (
     CRS_MASS_STATE_PLANE,
     CRS_WGS84,
+    MALDEN_STREET_CORRECTIONS,
     RATING_COLOR,
     WALK_AUDIT_NAME_Q,
     WALK_AUDIT_OVERALL_Q,
@@ -30,6 +31,18 @@ def clean_walk_audit(raw_df):
     df = df.dropna(axis=0, how='all')
     df = df.dropna(axis=1, how='all')
     return df.reset_index(drop=True)
+
+
+def _correct_street_name(name):
+    """
+    Title-case a parsed street name and apply Malden-specific corrections.
+    Fixes missing suffixes (Main → Main St) and wrong suffixes (Bell Rock Ave → Bell Rock St).
+    Returns the corrected string, or the title-cased input if no correction is found.
+    """
+    if not name:
+        return name
+    key = name.strip().title()
+    return MALDEN_STREET_CORRECTIONS.get(key, key)
 
 
 def parse_street_segment(segment):
@@ -94,7 +107,7 @@ def parse_street_segment(segment):
     result['normalized'] = normalized
 
     parts = normalized.split(',')
-    result['along'] = parts[0].strip()
+    result['along'] = _correct_street_name(parts[0].strip())
 
     if len(parts) < 2:
         return result
@@ -104,8 +117,8 @@ def parse_street_segment(segment):
         begin, end = intersections[0].strip(), intersections[1].strip()
         # Reject if either cross street looks like a street address (contains digits)
         if not re.search(r'\d', begin) and not re.search(r'\d', end):
-            result['begin'] = begin
-            result['end'] = end
+            result['begin'] = _correct_street_name(begin)
+            result['end']   = _correct_street_name(end)
             result['is_complete'] = True
 
     return result

@@ -40,7 +40,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.constants import DB_PATH, OUT_DIR
-from src.load_data import load_crashes_from_db, load_malden_boundary
+from src.load_data import load_crashes_from_db, load_malden_boundary, load_malden_roads
 from src.plot_counts import plot_crashes_over_time, plot_crashes_subplots_bar
 from src.filter_crashes import filter_crashes
 from src.crash_utils import get_counts, split_data_years, top_intersections
@@ -81,13 +81,21 @@ if __name__ == '__main__':
 
     # ── Spatial map (recent years, Malden boundary only) ─────────────────────
 
+    malden_roads = load_malden_roads()
+
     years = [2021, 2022, 2023, 2024, 2025]
+    map_df = load_crashes_from_db(DB_PATH, start_year=min(years), end_year=max(years), malden_only=True)
+    plot_crashes_spatial(
+        map_df, malden_gdf, malden_roads,
+        title=f'Malden Car Crashes 2021-2025',
+        save_path=OUT_DIR / f'crashes_spatial_2021-2025.png')
+
     for year in years:
         map_df = load_crashes_from_db(DB_PATH, start_year=year, end_year=year, malden_only=True)
         print(f"\nPlotting {len(map_df):,} crashes on the map for: {year}.")
 
         plot_crashes_spatial(
-            map_df, malden_gdf,
+            map_df, malden_gdf, malden_roads,
             title=f'Malden Car Crashes {year}',
             save_path=OUT_DIR / f'crashes_spatial_{year}.png'
         )
