@@ -17,6 +17,8 @@ Typical usage:
 import sqlite3
 import geopandas as gpd
 from src.constants import CRS, DB_PATH
+from src.geo_filtering import filter_to_malden_geo
+
 
 def crashes_to_geodataframe(crash_df):
     """
@@ -32,31 +34,6 @@ def crashes_to_geodataframe(crash_df):
     )
     return gdf
 
-
-def filter_to_malden_geo(crash_gdf, malden_gdf, buffer_distance=100):
-    """
-    Keep crashes within Malden's boundary plus those within buffer_distance
-    units of the border (catches crashes recorded just outside the boundary).
-
-    Returns a plain DataFrame (geometry column dropped) so downstream
-    functions don't need geopandas.
-    """
-    crash_gdf = crash_gdf.to_crs(malden_gdf.crs)
-
-    malden_buffered = malden_gdf.copy()
-    malden_buffered['geometry'] = malden_gdf.buffer(buffer_distance)
-
-    crashes_within    = gpd.sjoin(crash_gdf, malden_gdf[['geometry']],    predicate='within')
-    crashes_in_buffer = gpd.sjoin(crash_gdf, malden_buffered[['geometry']], predicate='within')
-
-    border_indices = crashes_in_buffer.index.difference(crashes_within.index)
-    keep_indices   = crashes_within.index.union(border_indices)
-
-    result = crash_gdf.loc[keep_indices].drop(columns='geometry')
-    print(f"filter_to_malden: {len(crashes_within)} within, "
-          f"{len(border_indices)} on border, "
-          f"{len(crash_gdf) - len(keep_indices)} outside and dropped")
-    return result.reset_index(drop=True)
 
 def backfill_malden_flag(db_path=DB_PATH):
     """

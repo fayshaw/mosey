@@ -67,50 +67,75 @@ def plot_crashes_spatial(crash_df, malden_gdf, title='Malden Crashes', save_path
         print(f"Saved {save_path}")
     return fig, ax
 
-def plot_walk_audit_map(gdf_points, gdf_lines, malden_gdf, malden_roads,
-                        rating_color, save_path=None):
+def plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads,
+                        save_path=None, figsize=(16, 12), dpi=300):
     """
     Walk audit map: road network (gray) + audit route lines colored by rating +
-    intersection points colored by rating + grouped street labels.
+    intersection points colored by rating + direction-aware street labels.
 
     Parameters
     ----------
-    gdf_points  : GeoDataFrame with walk audit intersection points and an 'overall_rating' column
-    gdf_lines   : GeoDataFrame with road-network routing lines and an 'overall_rating' column
+    gdf_all     : GeoDataFrame of intersection points (output of build_route_geodataframes)
+    gdf_lines   : GeoDataFrame of road-network route lines (output of build_route_geodataframes)
     malden_gdf  : GeoDataFrame of Malden boundary
-    malden_roads: GeoDataFrame of Malden road network
-    rating_color: dict mapping rating strings to color strings (from src.config.RATING_COLOR)
-    save_path   : optional Path to save the figure
+    malden_roads: GeoDataFrame of Malden roads
+    save_path   : optional path to save the figure (PNG)
+    figsize     : figure size tuple
+    dpi         : resolution for both rendering and saving
     """
     import math
+    import pandas as pd
+    from src.constants import RATING_COLOR, WALK_AUDIT_OVERALL_Q
 
-    fig, ax = plt.subplots(figsize=(16, 12), dpi=300)
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
     malden_gdf.plot(ax=ax,   color='whitesmoke', edgecolor='black', linewidth=1)
     malden_roads.plot(ax=ax, color='gray',       linewidth=0.75)
 
-    for rating, color in rating_color.items():
-        line_subset  = gdf_lines[gdf_lines['overall_rating']  == rating]
-        point_subset = gdf_points[gdf_points['overall_rating'] == rating]
-        if not line_subset.empty:
-            line_subset.plot(ax=ax,  color=color, linewidth=2.5, label=rating, alpha=0.8)
-        if not point_subset.empty:
-            point_subset.plot(ax=ax, color=color, markersize=6)
+    # Lines first so they appear under the intersection points
+    for rating, color in RATING_COLOR.items():
+        subset = gdf_lines[gdf_lines[WALK_AUDIT_OVERALL_Q] == rating]
+        if not subset.empty:
+            subset.plot(ax=ax, color=color, linewidth=2, alpha=0.6)
 
-    # Group labels by street name to avoid overlapping text
-    if 'street_label' in gdf_points.columns:
-        labeled = set()
-        for _, row in gdf_points.iterrows():
-            label = row.get('street_label', '')
-            if label and label not in labeled:
-                ax.annotate(label, xy=(row.geometry.x, row.geometry.y),
-                            fontsize=7, ha='center',
-                            xytext=(0, 6), textcoords='offset points')
-                labeled.add(label)
+    for rating, color in RATING_COLOR.items():
+        subset = gdf_all[gdf_all[WALK_AUDIT_OVERALL_Q] == rating]
+        if not subset.empty:
+            subset.plot(ax=ax, color=color, markersize=35, alpha=0.8, label=rating)
 
-    ax.legend(title='Overall Rating', loc='upper right')
-    ax.set_title('Malden Walk Audit Results')
+    # Direction-aware street labels: one per street name, placed at segment midpoint.
+    # Labels on roughly horizontal segments are nudged slightly downward to clear the line.
+    street_labels = {}
+    for _, row in gdf_lines.iterrows():
+        street = row.get('along')
+        if pd.notnull(street) and street not in street_labels:
+            midpoint = row['geometry'].interpolate(0.5, normalized=True)
+            street_labels[street] = (midpoint, row['geometry'])
+
+    offset_pct = 0.02
+    for street, (point, geom) in street_labels.items():
+        p1 = geom.interpolate(0.49, normalized=True)
+        p2 = geom.interpolate(0.51, normalized=True)
+        angle      = math.degrees(math.atan2(p2.y - p1.y, p2.x - p1.x))
+        angle_norm = angle % 180
+
+        if 45 < angle_norm < 135:
+            # Roughly vertical street — label at midpoint, no offset needed
+            label_x, label_y = point.x, point.y
+        else:
+            # Roughly horizontal street — nudge label slightly below the line
+            v_offset = -((ax.get_ylim()[1] - ax.get_ylim()[0]) * offset_pct)
+            label_x  = point.x
+            label_y  = point.y + v_offset
+
+        ax.text(label_x, label_y, street.title(),
+                fontsize=9, ha='center', va='center', fontweight='bold',
+                bbox=dict(boxstyle='round,pad=0.5', facecolor='lightyellow',
+                          edgecolor='black', alpha=0.85, linewidth=1))
+
+    ax.set_title('Walk Audit Ratings in Malden', fontsize=16)
+    ax.legend(title='Rating', fontsize=12, loc='upper right')
     plt.tight_layout()
     if save_path:
-        plt.savefig(save_path, dpi=300)
+        plt.savefig(save_path, dpi=dpi, bbox_inches='tight', facecolor='white')
         print(f"Saved {save_path}")
     return fig, ax

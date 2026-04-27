@@ -105,5 +105,5 @@ def load_malden_roads(shp_path=None):
     from src.constants import ROADS_SHP
     path = shp_path or ROADS_SHP
     malden = load_malden_boundary()
-    roads = gpd.read_file(path, bbox=malden.total_bounds)
+    roads = gpd.read_file(path, bbox=tuple(malden.total_bounds))
     return roads.clip(malden)

@@ -16,6 +16,7 @@ from src.constants import (
     WALK_AUDIT_SECTION_VAL,
     WALK_AUDIT_STREET_Q,
 )
+from src.geo_filtering import filter_to_malden_geo
 from src.spatial_utils import geocodio_geocode, route_along_roads
 
 
@@ -175,7 +176,8 @@ def add_rating_colors(walk_df, rating_col=None):
     return df
 
 
-def build_route_geodataframes(geocoded_df, G, target_crs=CRS_MASS_STATE_PLANE):
+def build_route_geodataframes(geocoded_df, G, malden_boundary=None,
+                              target_crs=CRS_MASS_STATE_PLANE):
     """
     Build two GeoDataFrames from geocoded walk audit data.
 
@@ -189,6 +191,9 @@ def build_route_geodataframes(geocoded_df, G, target_crs=CRS_MASS_STATE_PLANE):
 
     G is the OSMnx road network graph in EPSG:4326.
     Both returned GeoDataFrames are projected to target_crs.
+
+    If malden_boundary is provided, intersection points and route lines that
+    fall outside the Malden boundary (plus a 100 m buffer) are dropped.
     """
     plot_df = geocoded_df.dropna(subset=['lat', 'lon'])
     gdf_all = gpd.GeoDataFrame(
@@ -196,6 +201,10 @@ def build_route_geodataframes(geocoded_df, G, target_crs=CRS_MASS_STATE_PLANE):
         geometry=gpd.points_from_xy(plot_df['lon'], plot_df['lat']),
         crs=CRS_WGS84,
     ).to_crs(target_crs)
+
+    if malden_boundary is not None:
+        gdf_all = filter_to_malden_geo(gdf_all, malden_boundary, keep_geometry=True)
+        print(f"After filtering: {len(gdf_all)} intersection points in Malden")
 
     num_audits = len(geocoded_df) // 2
     begin_pts = geocoded_df.iloc[:num_audits].reset_index(drop=True)
@@ -226,4 +235,9 @@ def build_route_geodataframes(geocoded_df, G, target_crs=CRS_MASS_STATE_PLANE):
             print(f"Error on audit {i}: {e}")
 
     gdf_lines = gpd.GeoDataFrame(lines, crs=CRS_WGS84).to_crs(target_crs)
+
+    if malden_boundary is not None:
+        gdf_lines = filter_to_malden_geo(gdf_lines, malden_boundary, keep_geometry=True)
+        print(f"After filtering: {len(gdf_lines)} route segments in Malden")
+
     return gdf_all, gdf_lines
