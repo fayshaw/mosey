@@ -3,14 +3,15 @@ from pathlib import Path
 # Project root (src/config.py → src/ → project root)
 ROOT = Path(__file__).parent.parent
 OUT_DIR = ROOT / 'output'
+DATA_DIR = ROOT / 'data_sources'
 
 # File paths
-CRASH_FILE         = ROOT / "data_sources/Malden_crashesJan2015-1Dec2025.csv"
-WALK_AUDIT_FILE    = ROOT / "data_sources/Walk Audit Responses.xlsx"
+CRASH_FILE         = DATA_DIR / "Malden_crashesJan2015-1Dec2025.csv"
+WALK_AUDIT_FILE    = DATA_DIR / "Walk Audit Responses.xlsx"
 TOWN_SURVEY_SHP    = ROOT / "GIS/townssurvey_shp/TOWNSSURVEY_POLY.shp"
 ROADS_SHP          = ROOT / "GIS/statewide_viewer_SHP/gisdata/men1/infrastructure/EOTROADS_ARC.shp"
-DB_PATH            = ROOT / "db/crashes.db"
 ROAD_NETWORK_CACHE = ROOT / "GIS/malden_road_network.graphml"
+DB_PATH            = ROOT / "db/crashes.db"
 CRS = "EPSG:4326"
 
 # MassDOT CSV column names → database column names
@@ -68,3 +69,11 @@ CRS_MASS_STATE_PLANE = "EPSG:26986"
 # Walk audit rating scales
 RATING_VALUE = {'Great': 4, 'Acceptable': 3, 'Mixed': 2, 'Poor': 1}
 RATING_COLOR = {'Great': 'darkgreen', 'Acceptable': 'lightgreen', 'Mixed': 'gold', 'Poor': 'red'}
+
+# Walk audit column question strings (must match the spreadsheet headers exactly)
+WALK_AUDIT_NAME_Q      = "If you would like to be contacted for follow ups, please share your name. If in a group, share everyone's name separated by commas."
+WALK_AUDIT_WARD_Q      = "What Ward are you Walking in? (Optional)"
+WALK_AUDIT_SECTION_Q   = "Which Section of the Walk Audit are you Completing?"
+WALK_AUDIT_SECTION_VAL = "Sidewalks, Streets and Crossings (WALKING AUDIT)"
+WALK_AUDIT_STREET_Q    = "Which street are you auditing? Please indicate starting and ending locations."
+WALK_AUDIT_OVERALL_Q   = "Walkability of the area, based on the findings above:  "
