@@ -78,21 +78,29 @@ def plot_crashes_subplots(counts_df, out_dir):
 
 def plot_crashes_subplots_bar(counts_df, out_dir):
     """Three-panel chart: total line, ped/cycle line, fatal bar chart."""
-    fig, axes = plt.subplots(3, 1, figsize=(10, 8))
+    fig, axes = plt.subplots(3, 1, figsize=(10, 10))
     xticks = counts_df.index
 
     axes[0].set_title('Total Car Crashes')
     axes[0].plot(counts_df['crash_counts'], 'o-', label='Total Crashes', linewidth=2)
     axes[0].set_xticks(xticks)
-    axes[0].set_ylim(600, 1100)
+    axes[0].set_xticklabels(counts_df.index, rotation=45)
+    min_y0 = min(min(counts_df['crash_counts'])- 100, 0)
+    max_y0 = max(counts_df['crash_counts'] + 100)
+    axes[0].set_ylim(min_y0, max_y0)
     axes[0].set_ylabel('Number of Crashes')
     axes[0].grid(True)
     axes[0].legend(loc='upper left')
 
+    # Plot pedestrians and cyclists
     axes[1].set_title('Crashes with Pedestrians and Cyclists')
     axes[1].plot(counts_df['ped_counts'],   'o-', color='red',    label='Pedestrian Crashes', linewidth=2)
     axes[1].plot(counts_df['cycle_counts'], '^-', color='orange', label='Cyclist Crashes',    linewidth=2)
     axes[1].set_xticks(xticks)
+    axes[1].set_xticklabels(counts_df.index, rotation=45)
+    # min_y1 = min(min(counts_df['ped_counts']) - 20, 0)
+    max_y1 = max(counts_df['ped_counts'] + 10)
+    axes[1].set_ylim(0, max_y1)
     axes[1].set_ylabel('Number of Crashes')
     axes[1].grid(True)
     axes[1].legend(loc='upper left')
@@ -104,12 +112,24 @@ def plot_crashes_subplots_bar(counts_df, out_dir):
     axes[2].set_ylabel('Number of Fatal Crashes')
     axes[2].set_xlabel('Year')
     axes[2].set_xticks(xticks)
+    axes[2].set_xticklabels(counts_df.index, rotation=45)
     axes[2].set_yticks([0, 1, 2])
     axes[2].grid(True)
     axes[2].legend(loc='upper left')
 
-    plt.tight_layout()
+    #plt.tight_layout()
     path = out_dir / 'crash_trends_subplots_bar.png'
     plt.savefig(path)
     plt.close()
     print(f"Saved {path.name}")
+
+def plot_audit_ward_counts(ward_counts, plt_path=OUT_DIR / 'ward_counts.png'):
+    plt.figure(figsize=(10, 6))
+    plt.bar(ward_counts.index, ward_counts.values)
+    plt.xlabel('Ward')
+    plt.ylabel('Count')
+    plt.xticks(rotation=45)
+    plt.title('Walk Audit Ward Counts')
+    plt.tight_layout()
+    plt.savefig(plt_path)
+    plt.close()

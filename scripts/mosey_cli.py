@@ -59,10 +59,9 @@ CRASH_TYPES = {
 if __name__ == '__main__':
     malden_gdf = load_malden_boundary()
 
-    """
     # ── Time-series counts (all Malden crashes, full date range) ──────────────
     print("Loading crash data from database...")
-    crash_df = load_crashes_from_db(DB_PATH, start_year=2002, malden_only=True)
+    crash_df = load_crashes_from_db(DB_PATH, start_year=2015, malden_only=True)
     print(f"Loaded {len(crash_df):,} Malden crashes "
           f"({crash_df['crash_year'].min()}–{crash_df['crash_year'].max()})")
 
@@ -77,10 +76,11 @@ if __name__ == '__main__':
     
 
     plot_crashes_subplots_bar(all_counts_df, OUT_DIR)
-    """
+
 
     # ── Spatial map (recent years, Malden boundary only) ─────────────────────
 
+    """
     malden_roads = load_malden_roads()
 
     years = [2021, 2022, 2023, 2024, 2025]
@@ -99,6 +99,7 @@ if __name__ == '__main__':
             title=f'Malden Car Crashes {year}',
             save_path=OUT_DIR / f'crashes_spatial_{year}.png'
         )
+        """
 
     # TODO: walk audit map — add when walk_audit.py pipeline is complete
     # plot_walk_audit_map(gdf_points, gdf_lines, malden_gdf, malden_roads, RATING_COLOR)
