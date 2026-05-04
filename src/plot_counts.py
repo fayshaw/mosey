@@ -85,8 +85,8 @@ def plot_crashes_subplots_bar(counts_df, out_dir):
     axes[0].plot(counts_df['crash_counts'], 'o-', label='Total Crashes', linewidth=2)
     axes[0].set_xticks(xticks)
     axes[0].set_xticklabels(counts_df.index, rotation=45)
-    min_y0 = min(min(counts_df['crash_counts'])- 100, 0)
-    max_y0 = max(counts_df['crash_counts'] + 100)
+    min_y0 = max(min(counts_df['crash_counts']) - 100, 0)
+    max_y0 = max(counts_df['crash_counts']) + 100
     axes[0].set_ylim(min_y0, max_y0)
     axes[0].set_ylabel('Number of Crashes')
     axes[0].grid(True)
@@ -117,7 +117,7 @@ def plot_crashes_subplots_bar(counts_df, out_dir):
     axes[2].grid(True)
     axes[2].legend(loc='upper left')
 
-    #plt.tight_layout()
+    plt.tight_layout()
     path = out_dir / 'crash_trends_subplots_bar.png'
     plt.savefig(path)
     plt.close()

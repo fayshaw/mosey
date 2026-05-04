@@ -37,7 +37,23 @@ def _norm(s):
     return re.sub(r'\s+', '', s)  # remove spaces for fuzzy match
 
 
-def top_intersections(df, n=5, event_types=None):
+def is_ped_crash(df):
+    """True for rows where a pedestrian was involved, regardless of event order."""
+    return (
+        (df['first_harmful_event'] == 'Collision with pedestrian') |
+        df['vuln_user_type'].fillna('').str.contains('Pedestrian', case=False)
+    )
+
+
+def is_cyclist_crash(df):
+    """True for rows where a cyclist was involved, regardless of event order."""
+    return (
+        (df['first_harmful_event'] == 'Collision with cyclist') |
+        df['vuln_user_type'].fillna('').str.contains('Bicyclist|Cyclist', case=False)
+    )
+
+
+def top_intersections(df, n=5):
     """
     Find the top N intersections by crash count for vulnerable road users.
 
@@ -46,23 +62,18 @@ def top_intersections(df, n=5, event_types=None):
 
     Parameters
     ----------
-    df           : crash DataFrame loaded from the database (must include
-                   latitude, longitude, first_harmful_event, street_name_linked_rd,
-                   near_intersection, crash_year columns)
-    n            : number of top intersections to return (default 5)
-    event_types  : list of first_harmful_event values to include
-                   (default: pedestrian + cyclist)
+    df : crash DataFrame loaded from the database (must include latitude, longitude,
+         first_harmful_event, vuln_user_type, street_name_linked_rd,
+         near_intersection, crash_year columns)
+    n  : number of top intersections to return (default 5)
 
     Returns
     -------
     DataFrame with columns: rank, intersection, crashes, ped_crashes,
                              bike_crashes, lat, lon, years_active
     """
-    if event_types is None:
-        event_types = ['Collision with pedestrian', 'Collision with cyclist']
-
     vuln = df[
-        df['first_harmful_event'].isin(event_types) &
+        (is_ped_crash(df) | is_cyclist_crash(df)) &
         df['latitude'].notna() &
         df['longitude'].notna()
     ].copy()
@@ -103,8 +114,8 @@ def top_intersections(df, n=5, event_types=None):
             'lon_r':        lon_r,
             'intersection': best_label(cluster),
             'crashes':      len(cluster),
-            'ped_crashes':  (cluster['first_harmful_event'] == 'Collision with pedestrian').sum(),
-            'bike_crashes': (cluster['first_harmful_event'] == 'Collision with cyclist').sum(),
+            'ped_crashes':  is_ped_crash(cluster).sum(),
+            'bike_crashes': is_cyclist_crash(cluster).sum(),
             'lat':          cluster['latitude'].mean(),
             'lon':          cluster['longitude'].mean(),
             'years_active': f"{int(cluster['crash_year'].min())}–{int(cluster['crash_year'].max())}",
@@ -130,3 +141,17 @@ def split_data_years(df, out_dir):
             OUT_DIR / f'raw_crash_data_{year}.csv', index=False
         )
 
+def filter_crashes(df, **criteria):
+    """
+    Filter a crash DataFrame by column=value pairs.
+    Column names are snake_case (DB schema).
+
+    Example:
+        ped_df = filter_crashes(df, first_harmful_event='Collision with pedestrian')
+        fatal_ped_df = filter_crashes(df, first_harmful_event='Collision with pedestrian',
+                                          crash_severity='Fatal injury')
+    """
+    result = df
+    for column, value in criteria.items():
+        result = result[result[column] == value]
+    return result

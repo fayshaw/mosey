@@ -22,7 +22,7 @@ from src.walk_audit import (
     geocode_intersections,
     parse_all_segments,
 )
-
+from src.plot_counts import plot_audit_ward_counts
 
 load_dotenv()
 
@@ -53,6 +53,10 @@ print(f"Saved {out_path} ({len(geocoded_df)} rows)")
 
 geocoded_df = pd.read_csv(OUT_DIR / "walk_audit_geocoded.csv")
 
+ward_counts = geocoded_df['What Ward are you Walking in? (Optional)'].value_counts()
+ward_counts_path = OUT_DIR / "ward_counts.png"
+plot_audit_ward_counts(ward_counts, plt_path=ward_counts_path)
+
 malden_gdf   = load_malden_boundary()
 malden_roads = load_malden_roads()
 
@@ -62,4 +66,5 @@ print(f"Route GeoDataFrames: {len(gdf_all)} points, {len(gdf_lines)} segments")
 map_path = OUT_DIR / "walk_audit_map.png"
 plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads, save_path=map_path)
 print(f"Saved {map_path}")
+
 

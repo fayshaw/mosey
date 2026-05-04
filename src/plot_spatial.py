@@ -38,17 +38,17 @@ def plot_crashes_spatial(crash_df, malden_gdf, malden_roads=None,
     Requires crash_df to have latitude/longitude (converts to GeoDataFrame internally).
     malden_roads is optional; pass the output of load_malden_roads() to include it.
     """
-    from src.filter_crashes import filter_crashes, crashes_to_geodataframe
-    from src.constants import CRS
+    from src.filter_crashes import crashes_to_geodataframe
+    from src.crash_utils import is_ped_crash, is_cyclist_crash
 
     # Convert to GeoDataFrame
     crash_gdf = crashes_to_geodataframe(crash_df)
     crash_gdf = crash_gdf.to_crs(malden_gdf.crs)
 
     # Filter into subsets
-    ped_df = filter_crashes(crash_df, first_harmful_event='Collision with pedestrian')
+    ped_df    = crash_df[is_ped_crash(crash_df)]
     ped_fatal = ped_df[ped_df['crash_severity'] == 'Fatal injury']
-    cycle_df = filter_crashes(crash_df, first_harmful_event='Collision with cyclist')
+    cycle_df  = crash_df[is_cyclist_crash(crash_df)]
 
     ped_gdf = crashes_to_geodataframe(ped_df).to_crs(malden_gdf.crs)
     ped_fatal_gdf = crashes_to_geodataframe(ped_fatal).to_crs(malden_gdf.crs)
