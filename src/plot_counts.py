@@ -49,8 +49,6 @@ def plot_crashes_over_time(counts_df, OUT_DIR,
     print(f"Saved {path.name}")
 
 
-
-
 def plot_crashes_subplots(counts_df, out_dir):
     """Two-panel line chart: total crashes (top), ped/cycle crashes (bottom)."""
     fig, axes = plt.subplots(2, 1, figsize=(8, 6))
@@ -68,9 +66,12 @@ def plot_crashes_subplots(counts_df, out_dir):
     axes[1].plot(counts_df['cycle_fatal_counts'], 's-', color='darkorange', label='Fatal cyclist crashes',    linewidth=2)
     axes[1].grid(True)
     axes[1].legend(loc='upper left')
-
     plt.tight_layout()
-    path = out_dir / 'crash_trends_subplots.png'
+
+    min_year = min(counts_df.index)
+    max_year = max(counts_df.index)
+
+    path = out_dir / f'crash_trends_subplots_{min_year}-{max_year}.png'
     plt.savefig(path)
     plt.close()
     print(f"Saved {path.name}")
@@ -82,7 +83,7 @@ def plot_crashes_subplots_bar(counts_df, out_dir):
     xticks = counts_df.index
 
     axes[0].set_title('Total Car Crashes')
-    axes[0].plot(counts_df['crash_counts'], 'o-', label='Total Crashes', linewidth=2)
+    axes[0].plot(counts_df['crash_counts'], 'o-', label='Total Crashes', linewidth=3, markersize=10)
     axes[0].set_xticks(xticks)
     axes[0].set_xticklabels(counts_df.index, rotation=45)
     min_y0 = max(min(counts_df['crash_counts']) - 100, 0)
@@ -94,11 +95,10 @@ def plot_crashes_subplots_bar(counts_df, out_dir):
 
     # Plot pedestrians and cyclists
     axes[1].set_title('Crashes with Pedestrians and Cyclists')
-    axes[1].plot(counts_df['ped_counts'],   'o-', color='red',    label='Pedestrian Crashes', linewidth=2)
-    axes[1].plot(counts_df['cycle_counts'], '^-', color='orange', label='Cyclist Crashes',    linewidth=2)
+    axes[1].plot(counts_df['ped_counts'],   'o-', color='red',    label='Pedestrian Crashes', linewidth=3, markersize=10)
+    axes[1].plot(counts_df['cycle_counts'], '^-', color='orange', label='Cyclist Crashes',    linewidth=3, markersize=10)
     axes[1].set_xticks(xticks)
     axes[1].set_xticklabels(counts_df.index, rotation=45)
-    # min_y1 = min(min(counts_df['ped_counts']) - 20, 0)
     max_y1 = max(counts_df['ped_counts'] + 10)
     axes[1].set_ylim(0, max_y1)
     axes[1].set_ylabel('Number of Crashes')
@@ -118,7 +118,11 @@ def plot_crashes_subplots_bar(counts_df, out_dir):
     axes[2].legend(loc='upper left')
 
     plt.tight_layout()
-    path = out_dir / 'crash_trends_subplots_bar.png'
+    min_year = min(counts_df.index)
+    max_year = max(counts_df.index)
+
+    path = out_dir / f'crash_trends_subplots_bar_{min_year}-{max_year}.png'
+#    path = out_dir / 'crash_trends_subplots_bar.png'
     plt.savefig(path)
     plt.close()
     print(f"Saved {path.name}")

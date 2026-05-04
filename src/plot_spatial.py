@@ -38,8 +38,8 @@ def plot_crashes_spatial(crash_df, malden_gdf, malden_roads=None,
     Requires crash_df to have latitude/longitude (converts to GeoDataFrame internally).
     malden_roads is optional; pass the output of load_malden_roads() to include it.
     """
-    from src.filter_crashes import crashes_to_geodataframe
     from src.crash_utils import is_ped_crash, is_cyclist_crash
+    from src.geo_filtering import crashes_to_geodataframe
 
     # Convert to GeoDataFrame
     crash_gdf = crashes_to_geodataframe(crash_df)
@@ -61,7 +61,7 @@ def plot_crashes_spatial(crash_df, malden_gdf, malden_roads=None,
     crash_gdf.plot(ax=ax, color='blue', markersize=10, alpha=0.5, label='All crashes')
     ped_gdf.plot(ax=ax, color='red', markersize=30, label='Pedestrian')
     if not ped_fatal_gdf.empty:
-        ped_fatal_gdf.plot(ax=ax, color='darkred', markersize=80, label='Fatal pedestrian', marker='x')
+        ped_fatal_gdf.plot(ax=ax, color='darkred', markersize=90, label='Fatal pedestrian', marker='x')
     cycle_gdf.plot(ax=ax, color='orange', markersize=30, label='Cyclist', marker='^')
     ax.set_title(title, fontsize=18, fontweight='bold', pad=20)
     ax.legend(loc='lower right', fontsize=13)
