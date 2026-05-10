@@ -29,7 +29,7 @@ def plot_malden_boundary(malden_gdf, ax=None, figsize=(12, 10)):
 
 
 def plot_crashes_spatial(crash_df, malden_gdf, malden_roads=None,
-                         title='Malden Crashes', save_path=None, figsize=(14, 10)):
+                         title='Malden Crashes', save_path=None, figsize=(20, 16)):
     """
     Spatial crash map: Malden boundary + optional road network (gray) +
     all crashes (blue) + pedestrian crashes (red) + cyclist crashes (orange triangle).
@@ -59,20 +59,20 @@ def plot_crashes_spatial(crash_df, malden_gdf, malden_roads=None,
     if malden_roads is not None:
         malden_roads.plot(ax=ax, color='gray', linewidth=0.5, alpha=0.7)
     crash_gdf.plot(ax=ax, color='blue', markersize=10, alpha=0.5, label='All crashes')
-    ped_gdf.plot(ax=ax, color='red', markersize=30, label='Pedestrian')
+    ped_gdf.plot(ax=ax, color='red', markersize=20, label='Pedestrian')
     if not ped_fatal_gdf.empty:
         ped_fatal_gdf.plot(ax=ax, color='darkred', markersize=90, label='Fatal pedestrian', marker='x')
-    cycle_gdf.plot(ax=ax, color='orange', markersize=30, label='Cyclist', marker='^')
+    cycle_gdf.plot(ax=ax, color='orange', markersize=20, label='Cyclist', marker='^')
     ax.set_title(title, fontsize=18, fontweight='bold', pad=20)
     ax.legend(loc='lower right', fontsize=13)
     plt.tight_layout()
     if save_path:
-        plt.savefig(save_path, dpi=150)
+        plt.savefig(save_path, dpi=300)
         print(f"Saved {save_path}")
     return fig, ax
 
 def plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads,
-                        save_path=None, figsize=(16, 12), dpi=300):
+                        save_path=None, figsize=(20, 16), dpi=300):
     """
     Walk audit map: road network (gray) + audit route lines colored by rating +
     intersection points colored by rating + direction-aware street labels.

@@ -14,6 +14,22 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.constants import DB_PATH, CRASH_FILE
 from src.load_data import ingest_csv_to_db
 
+CREATE_CRASH_REPORTS = """
+CREATE TABLE IF NOT EXISTS CrashReports (
+    crash_id             TEXT PRIMARY KEY,  -- matches Crashes.crash_number when portal has the record
+    crash_date           DATE,
+    crash_time           TEXT,
+    city                 TEXT,
+    num_vehicles         INTEGER,
+    num_injured          INTEGER,
+    at_intersection      INTEGER,           -- 1=yes, 0=no, NULL=unknown
+    location_text        TEXT,
+    non_motorist_present INTEGER,           -- 1=likely VRU involved (triage flag)
+    source_pdf           TEXT,
+    extracted_at         TEXT              -- ISO timestamp
+)
+"""
+
 CREATE_TABLE = """
 CREATE TABLE IF NOT EXISTS Crashes (
     crash_number                TEXT PRIMARY KEY,
@@ -68,7 +84,7 @@ CREATE TABLE IF NOT EXISTS Crashes (
 
 
 def create_schema(db_path=DB_PATH):
-    """Drop the old table and create the new schema."""
+    """Drop the old Crashes table and recreate it. Does not touch CrashReports."""
     conn = sqlite3.connect(db_path)
     conn.execute("DROP TABLE IF EXISTS Crashes")
     conn.execute(CREATE_TABLE)
@@ -78,6 +94,18 @@ def create_schema(db_path=DB_PATH):
     conn.commit()
     conn.close()
     print(f"Schema created: {db_path}")
+
+
+def add_crash_reports_table(db_path=DB_PATH):
+    """
+    Create the CrashReports table if it doesn't exist.
+    Safe to run on a database that already has the table — does nothing in that case.
+    """
+    conn = sqlite3.connect(db_path)
+    conn.execute(CREATE_CRASH_REPORTS)
+    conn.commit()
+    conn.close()
+    print("CrashReports table ready.")
 
 
 def add_malden_column(db_path=DB_PATH):

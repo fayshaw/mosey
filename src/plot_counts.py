@@ -17,8 +17,8 @@ PLOT_STYLES = {
     'crash_counts':       {'color': 'tab:blue',   'label': 'Total Car Crashes'},
     'ped_counts':         {'color': 'red',         'label': 'Crashes with Pedestrians'},
     'ped_fatal_counts':   {'color': 'darkred',     'label': 'Fatal Pedestrian Crashes',  'marker': 'x'},
-    'cycle_counts':       {'color': 'orange',      'label': 'Crashes with Cyclists'},
-    'cycle_fatal_counts': {'color': 'darkorange',  'label': 'Fatal Cyclist Crashes',     'marker': 'x'},
+    'cycle_counts':       {'color': 'orange',      'label': 'Crashes with Cyclists', 'marker': '^'},
+    'cycle_fatal_counts': {'color': 'darkred',  'label': 'Fatal Cyclist Crashes', 'marker': '^'},
 }
 
 
@@ -26,6 +26,9 @@ def plot_crashes_over_time(counts_df, OUT_DIR,
                            include_crashes=True, include_ped=True, include_cycle=True,
                            include_ped_fatal=False, include_cycle_fatal=False):
     """Line chart of crash trends by year."""
+    counts_df['year'] = counts_df.index
+    start_year = min(counts_df['year'])
+    end_year = max(counts_df['year'])
     include = {
         'crash_counts': include_crashes, 'ped_counts': include_ped,
         'ped_fatal_counts': include_ped_fatal, 'cycle_counts': include_cycle,
@@ -39,11 +42,13 @@ def plot_crashes_over_time(counts_df, OUT_DIR,
                     label=style['label'], linewidth=2)
     ax.set_xlabel('Year')
     ax.set_ylabel('Number of Crashes')
-    ax.set_title('Car Crashes in Malden')
+    ax.set_title(f'Car Crashes in Malden {start_year}-{end_year}')
     ax.legend()
-    ax.grid(True, alpha=0.3)
+    ax.set_xticks(range(start_year, end_year + 1))
+    ax.set_yticks(range(0, max(counts_df['crash_counts']), 100))
+    ax.grid(True)
     plt.tight_layout()
-    path = OUT_DIR / 'crash_trends.png'
+    path = OUT_DIR / f'crash_trends_{start_year}-{end_year}.png'
     plt.savefig(path)
     plt.close()
     print(f"Saved {path.name}")
@@ -51,7 +56,7 @@ def plot_crashes_over_time(counts_df, OUT_DIR,
 
 def plot_crashes_subplots(counts_df, out_dir):
     """Two-panel line chart: total crashes (top), ped/cycle crashes (bottom)."""
-    fig, axes = plt.subplots(2, 1, figsize=(8, 6))
+    fig, axes = plt.subplots(2, 1, figsize=(10, 6))
 
     axes[0].set_title('Total Car Crashes')
     axes[0].plot(counts_df['crash_counts'], 'o-', label='Total Crashes', linewidth=2)
@@ -79,14 +84,15 @@ def plot_crashes_subplots(counts_df, out_dir):
 
 def plot_crashes_subplots_bar(counts_df, out_dir):
     """Three-panel chart: total line, ped/cycle line, fatal bar chart."""
-    fig, axes = plt.subplots(3, 1, figsize=(10, 10))
+    fig, axes = plt.subplots(3, 1, figsize=(12, 10))
     xticks = counts_df.index
 
     axes[0].set_title('Total Car Crashes')
     axes[0].plot(counts_df['crash_counts'], 'o-', label='Total Crashes', linewidth=3, markersize=10)
     axes[0].set_xticks(xticks)
     axes[0].set_xticklabels(counts_df.index, rotation=45)
-    min_y0 = max(min(counts_df['crash_counts']) - 100, 0)
+    min_y0 = 0
+    # min_y0 = max(min(counts_df['crash_counts']) - 100, 0)
     max_y0 = max(counts_df['crash_counts']) + 100
     axes[0].set_ylim(min_y0, max_y0)
     axes[0].set_ylabel('Number of Crashes')
@@ -126,6 +132,61 @@ def plot_crashes_subplots_bar(counts_df, out_dir):
     plt.savefig(path)
     plt.close()
     print(f"Saved {path.name}")
+
+
+def plot_crashes_subplots_bar_yaxis(counts_df, out_dir):
+    """Three-panel chart: total line, ped/cycle line, fatal bar chart."""
+    fig, axes = plt.subplots(3, 1, figsize=(12, 10))
+    xticks = counts_df.index
+
+    axes[0].set_title('Total Car Crashes')
+    axes[0].plot(counts_df['crash_counts'], 'o-', label='Total Crashes', linewidth=3, markersize=10)
+    axes[0].plot(counts_df['ped_counts'], 'o-',  color='red', label='Crashes with Pedestrians', linewidth=3, markersize=10)
+    axes[0].plot(counts_df['cycle_counts'], '^-',  color='orange', label='Crashes with Cyclists', linewidth=3, markersize=10)
+    axes[0].set_xticks(xticks)
+    axes[0].set_xticklabels(counts_df.index, rotation=45)
+    min_y0 = 0
+    max_y0 = max(counts_df['crash_counts']) + 100
+    axes[0].set_yticks(range(0, max_y0, 100))
+    axes[0].set_ylim(min_y0, max_y0)
+    axes[0].set_ylabel('Number of Crashes')
+    axes[0].grid(True)
+    axes[0].legend(loc='center left')
+
+    # Plot pedestrians and cyclists
+    axes[1].set_title('Crashes with Pedestrians and Cyclists')
+    axes[1].plot(counts_df['ped_counts'], 'o-', color='red', label='Pedestrian Crashes', linewidth=3, markersize=10)
+    axes[1].plot(counts_df['cycle_counts'], '^-', color='orange', label='Cyclist Crashes', linewidth=3,
+                 markersize=10)
+    axes[1].set_xticks(xticks)
+    axes[1].set_xticklabels(counts_df.index, rotation=45)
+    max_y1 = max(counts_df['ped_counts'] + 10)
+    axes[1].set_ylim(0, max_y1)
+    axes[1].set_ylabel('Number of Crashes')
+    axes[1].grid(True)
+    axes[1].legend(loc='upper left')
+
+    axes[2].set_title('Fatal Crashes with Pedestrians and Cyclists')
+    x, width = counts_df.index, 0.35
+    axes[2].bar(x - width / 2, counts_df['ped_fatal_counts'], width, label='Fatal Pedestrian', color='darkred')
+    axes[2].bar(x + width / 2, counts_df['cycle_fatal_counts'], width, label='Fatal Cyclist', color='darkorange')
+    axes[2].set_ylabel('Number of Fatal Crashes')
+    axes[2].set_xlabel('Year')
+    axes[2].set_xticks(xticks)
+    axes[2].set_xticklabels(counts_df.index, rotation=45)
+    axes[2].set_yticks([0, 1, 2])
+    axes[2].grid(True)
+    axes[2].legend(loc='upper left')
+
+    plt.tight_layout()
+    min_year = min(counts_df.index)
+    max_year = max(counts_df.index)
+
+    path = out_dir / f'crash_trends_combined_and_subplots_bar_{min_year}-{max_year}'
+    plt.savefig(path)
+    plt.close()
+    print(f"Saved {path.name}")
+
 
 def plot_audit_ward_counts(ward_counts, plt_path=OUT_DIR / 'ward_counts.png'):
     plt.figure(figsize=(10, 6))
