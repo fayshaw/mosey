@@ -3,11 +3,12 @@ import time
 from pathlib import Path
 
 import networkx as nx
+import numpy as np
 import pandas as pd
 from shapely.geometry import LineString
 from shapely.ops import unary_union
 
-from src.constants import ROAD_NETWORK_CACHE
+from src.constants import ROAD_NETWORK_CACHE, SEARCH_RADIUS
 
 
 def get_malden_road_network(cache_path=None):
@@ -65,3 +66,42 @@ def geocodio_geocode(intersection, client):
         return pd.Series({'lat': None, 'lon': None, 'geocoding_status': 'null_returned'})
     except Exception as e:
         return pd.Series({'lat': None, 'lon': None, 'geocoding_status': f'error: {e}'})
+
+
+def _haversine_ft(lat0, lon0, lats, lons):
+    """Vectorized Haversine distance in feet from one point to arrays of points."""
+    lat0, lon0 = np.radians(lat0), np.radians(lon0)
+    lats = np.radians(np.asarray(lats, dtype=float))
+    lons = np.radians(np.asarray(lons, dtype=float))
+    dlat = lats - lat0
+    dlon = lons - lon0
+    a = np.sin(dlat / 2) ** 2 + np.cos(lat0) * np.cos(lats) * np.sin(dlon / 2) ** 2
+    return 2 * np.arcsin(np.sqrt(a)) * 3959 * 5280
+
+
+def crashes_near_point(lat, lon, crash_df, radius_ft=SEARCH_RADIUS,
+                       lat_col='latitude', lon_col='longitude'):
+    """
+    Return crashes within radius_ft of (lat, lon) using Haversine distance.
+
+    Adds a 'distance_ft' column to the result, sorted nearest-first.
+    Uses vectorized numpy — no row-wise loop.
+
+    Parameters
+    ----------
+    lat, lon   : center point coordinates (WGS84 degrees)
+    crash_df   : DataFrame with at least lat_col and lon_col columns
+    radius_ft  : search radius in feet (default: SEARCH_RADIUS from constants)
+    lat_col    : name of the latitude column  (default 'latitude' for DB schema)
+    lon_col    : name of the longitude column (default 'longitude' for DB schema)
+
+    Returns
+    -------
+    DataFrame filtered to crashes within radius_ft, with 'distance_ft' column added.
+    """
+    crash_lat_lon = crash_df.dropna(subset=[lat_col, lon_col]).copy()
+    dist = _haversine_ft(lat, lon, crash_lat_lon[lat_col].to_numpy(), crash_lat_lon[lon_col].to_numpy())
+    crash_lat_lon['distance_ft'] = dist.round().astype(int)
+    return crash_lat_lon[dist <= radius_ft].sort_values('distance_ft').reset_index(drop=True)
+
+

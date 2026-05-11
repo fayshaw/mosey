@@ -56,16 +56,18 @@ def plot_points(data, crash_df):
     # ... rest of code
 '''
 
+import numpy as np
 import folium
-import requests 
+import requests
 import pandas as pd
 import re
 import streamlit as st
 from dotenv import load_dotenv
+from src.spatial_utils import crashes_near_point
+from src.constants import SEARCH_RADIUS
 
 START_YEAR = 2015
 END_YEAR = 2025
-SEARCH_RADIUS = 2000  # feet
 
 malden_places = {
     'Centre St & Main St'          : '205 Centre St, Malden, MA 02148',
@@ -78,6 +80,7 @@ malden_places = {
     }
 
 
+@st.cache_data
 def load_data():
     """Load crash data from CSV file"""
     folder = 'data_sources/'
@@ -116,16 +119,6 @@ def get_walk_score(lat, lon):
     return data['walkscore']
 
 
-def find_box(lat, lon):    
-    """Get latitude and longitiude box around lat, lon within SEARCH_RADIUS (feet)"""
-    lat_conv = 0.000000274    #lat: 1 ft = 0.000000274 deg
-    lon_conv = 0.000000347    #lon: 1 ft = 0.000000347 deg
-    
-    d_lat = SEARCH_RADIUS * lat_conv
-    d_lon = SEARCH_RADIUS * lon_conv
-    
-    return(lat-d_lat, lat+d_lat, lon-d_lon, lon+d_lon)
-
 
 def count_zone_crashes(zone_df, thresh_year):
     """Count number of crashes in zone_df after thresh_year"""
@@ -133,6 +126,34 @@ def count_zone_crashes(zone_df, thresh_year):
     crash_count = thresh_zone_df.shape[0] # count number of accidents
         
     return crash_count
+
+
+def _make_crash_layers(df, map_obj):
+    """Add vectorized blue/red CircleMarker GeoJson layers to a Folium map."""
+    clean = df.dropna(subset=['Latitude', 'Longitude'])
+    is_ped = clean['First Harmful Event'] == 'Collision with pedestrian'
+    for subset, color in [(clean[~is_ped], 'blue'), (clean[is_ped], 'red')]:
+        if subset.empty:
+            continue
+        lats = subset['Latitude'].to_numpy()
+        lons = subset['Longitude'].to_numpy()
+        geojson = {
+            'type': 'FeatureCollection',
+            'features': [
+                {'type': 'Feature',
+                 'geometry': {'type': 'Point', 'coordinates': [float(lo), float(la)]},
+                 'properties': {}}
+                for la, lo in zip(lats, lons)
+            ]
+        }
+        folium.GeoJson(
+            geojson,
+            marker=folium.CircleMarker(
+                radius=3, weight=3, color=color,
+                fill=True, fill_color=color, fill_opacity=0.6
+            )
+        ).add_to(map_obj)
+
 
 '''
 def get_geo_points(lat_0, lon_0, zone_df):
@@ -161,18 +182,10 @@ def plot_points(data, crash_df):
     lat_0 = float(data[0]["lat"])
     lon_0 = float(data[0]["lon"])
 
-    min_lat, max_lat, min_lon, max_lon = find_box(lat_0, lon_0)
-    crash_lat = crash_df['Latitude'].between(min_lat, max_lat)
-    crash_lon = crash_df['Longitude'].between(min_lon, max_lon)
-    crash_year = crash_df['Crash Year'] >= START_YEAR
-    zone_df = crash_df[crash_lat & crash_lon  & crash_year]
-    #geo_zone_df, geo_zone_list = get_geo_points(lat_0, lon_0, zone_df)
-
-    crash_points = set()
-    for idx, row in zone_df.iterrows():
-        crash_points.add((float(row['Latitude']), float(row['Longitude']), row['First Harmful Event']))
-    #crash_count = len(geo_zone_list) # count number of points
-    crash_count = len(crash_points)
+    zone_df = crashes_near_point(lat_0, lon_0, crash_df,
+                                 lat_col='Latitude', lon_col='Longitude')
+    zone_df = zone_df[zone_df['Crash Year'] >= START_YEAR]
+    crash_count = len(zone_df)
 
     m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=18)       
 #                   zoom_control=False, scrollWheelZoom=False, dragging=False)    # uncomment to freeze navigation     
@@ -183,13 +196,13 @@ def plot_points(data, crash_df):
         ))
 
     
-    # Create a rectangle (bounding box) on the map
-    folium.Rectangle(
-        bounds=[(min_lat, min_lon), (max_lat, max_lon)],
+    folium.Circle(
+        location=[lat_0, lon_0],
+        radius=SEARCH_RADIUS / 3.281,  # feet to metres
         color='gray',
         fill=True,
         fill_color='gray',
-        fill_opacity=0.2
+        fill_opacity=0.15
     ).add_to(m)
 
     # Extract as function - pedestrian indicator
@@ -201,9 +214,7 @@ def plot_points(data, crash_df):
             folium.CircleMarker(location=geo_zone_list[ind], radius=2, weight=3, color='blue').add_to(m)
     '''
 
-    for lat, lon, event in crash_points:
-        color = 'red' if event == 'Collision with pedestrian' else 'blue'
-        folium.CircleMarker(location=[lat, lon], radius=2, weight=3, color=color).add_to(m)
+    _make_crash_layers(zone_df, m)
 
     ## This code is to plot all points in a year
     #crashes_end_year_df = crash_df[crash_df['Crash Year'] == END_YEAR]
@@ -236,11 +247,6 @@ def plot_points(data, crash_df):
             location=[lat_0, lon_0], popup=address, icon=folium.Icon(color='blue')
         ))
 
-    map_year.add_child(
-        folium.Marker(
-            location = [lat_0, lon_0], popup=address, icon=folium.Icon(color='blue')        
-        ))
-
     '''
     # Extract as function - pedestrian indicator
     for ind, val in enumerate(geoyr_df_list):
@@ -250,17 +256,7 @@ def plot_points(data, crash_df):
             folium.CircleMarker(location=geoyr_df_list[ind], radius=2, weight=3, color='blue').add_to(map_year)
     '''
 
-    # Add end-year crash markers
-    for idx, row in crashes_end_year_df.iterrows():
-        if pd.notna(row['Latitude']) and pd.notna(row['Longitude']):
-            lat, lon = float(row['Latitude']), float(row['Longitude'])
-            color = 'red' if row['First Harmful Event'] == 'Collision with pedestrian' else 'blue'
-            folium.CircleMarker(
-                location=[lat, lon],
-                radius=2,
-                weight=3,
-                color=color
-            ).add_to(map_year)
+    _make_crash_layers(crashes_end_year_df, map_year)
 
     return m, map_year, crash_count
 

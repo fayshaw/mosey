@@ -11,6 +11,11 @@ without assuming a fixed output path.
 import matplotlib.pyplot as plt
 from src.constants import OUT_DIR
 
+# Size constants
+title_size = 16
+axis_size = 14
+legend_size = 12
+
 # ── Time-series plots ────────────────────────────────────────────────────────
 
 PLOT_STYLES = {
@@ -134,49 +139,53 @@ def plot_crashes_subplots_bar(counts_df, out_dir):
     print(f"Saved {path.name}")
 
 
-def plot_crashes_subplots_bar_yaxis(counts_df, out_dir):
+def plot_combined_crashes_subplots_bar(counts_df, out_dir):
     """Three-panel chart: total line, ped/cycle line, fatal bar chart."""
     fig, axes = plt.subplots(3, 1, figsize=(12, 10))
     xticks = counts_df.index
 
-    axes[0].set_title('Total Car Crashes')
+    axes[0].set_title('Total Car Crashes', fontsize=title_size)
     axes[0].plot(counts_df['crash_counts'], 'o-', label='Total Crashes', linewidth=3, markersize=10)
     axes[0].plot(counts_df['ped_counts'], 'o-',  color='red', label='Crashes with Pedestrians', linewidth=3, markersize=10)
     axes[0].plot(counts_df['cycle_counts'], '^-',  color='orange', label='Crashes with Cyclists', linewidth=3, markersize=10)
     axes[0].set_xticks(xticks)
-    axes[0].set_xticklabels(counts_df.index, rotation=45)
+    axes[0].set_xticklabels(counts_df.index, fontsize=axis_size)
     min_y0 = 0
     max_y0 = max(counts_df['crash_counts']) + 100
     axes[0].set_yticks(range(0, max_y0, 100))
+    axes[0].tick_params(axis='y', labelsize=axis_size)
     axes[0].set_ylim(min_y0, max_y0)
-    axes[0].set_ylabel('Number of Crashes')
+    axes[0].set_ylabel('Number of Crashes', fontsize=axis_size)
     axes[0].grid(True)
-    axes[0].legend(loc='center left')
+    axes[0].legend(loc='center left', fontsize=legend_size)
 
     # Plot pedestrians and cyclists
-    axes[1].set_title('Crashes with Pedestrians and Cyclists')
+    axes[1].set_title('Crashes with Pedestrians and Cyclists', fontsize=title_size)
     axes[1].plot(counts_df['ped_counts'], 'o-', color='red', label='Pedestrian Crashes', linewidth=3, markersize=10)
     axes[1].plot(counts_df['cycle_counts'], '^-', color='orange', label='Cyclist Crashes', linewidth=3,
                  markersize=10)
     axes[1].set_xticks(xticks)
-    axes[1].set_xticklabels(counts_df.index, rotation=45)
+    axes[1].set_xticklabels(counts_df.index, fontsize=axis_size)
+    # axes[1].set_xticklabels(counts_df.index, rotation=45)
     max_y1 = max(counts_df['ped_counts'] + 10)
     axes[1].set_ylim(0, max_y1)
-    axes[1].set_ylabel('Number of Crashes')
+    axes[1].set_ylabel('Number of Crashes', fontsize=axis_size)
+    axes[1].tick_params(axis='y', labelsize=axis_size)
     axes[1].grid(True)
-    axes[1].legend(loc='upper left')
+    axes[1].legend(loc='upper left', fontsize=legend_size)
 
-    axes[2].set_title('Fatal Crashes with Pedestrians and Cyclists')
+    axes[2].set_title('Fatal Crashes with Pedestrians and Cyclists', fontsize=title_size)
     x, width = counts_df.index, 0.35
     axes[2].bar(x - width / 2, counts_df['ped_fatal_counts'], width, label='Fatal Pedestrian', color='darkred')
     axes[2].bar(x + width / 2, counts_df['cycle_fatal_counts'], width, label='Fatal Cyclist', color='darkorange')
-    axes[2].set_ylabel('Number of Fatal Crashes')
-    axes[2].set_xlabel('Year')
+    axes[2].set_xlabel('Year', fontsize=axis_size)
     axes[2].set_xticks(xticks)
-    axes[2].set_xticklabels(counts_df.index, rotation=45)
+    axes[2].set_xticklabels(counts_df.index, fontsize=axis_size)
+    axes[2].set_ylabel('Number of Fatal Crashes', fontsize=axis_size)
     axes[2].set_yticks([0, 1, 2])
+    axes[2].tick_params(axis='y', labelsize=axis_size)
     axes[2].grid(True)
-    axes[2].legend(loc='upper left')
+    axes[2].legend(loc='upper left', fontsize=legend_size)
 
     plt.tight_layout()
     min_year = min(counts_df.index)

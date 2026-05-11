@@ -12,7 +12,6 @@ TOWN_SURVEY_SHP    = ROOT / "GIS/townssurvey_shp/TOWNSSURVEY_POLY.shp"
 ROADS_SHP          = ROOT / "GIS/statewide_viewer_SHP/gisdata/men1/infrastructure/EOTROADS_ARC.shp"
 ROAD_NETWORK_CACHE = ROOT / "GIS/malden_road_network.graphml"
 DB_PATH            = ROOT / "db/crashes.db"
-CRS = "EPSG:4326"
 
 # MassDOT CSV column names → database column names
 COLUMN_MAP = {
@@ -65,6 +64,7 @@ COLUMN_MAP = {
 }
 
 # Coordinate reference systems
+CRS                  = "EPSG:4326"
 CRS_WGS84            = "EPSG:4326"
 CRS_MASS_STATE_PLANE = "EPSG:26986"
 
@@ -112,3 +112,27 @@ WALK_AUDIT_SECTION_Q   = "Which Section of the Walk Audit are you Completing?"
 WALK_AUDIT_SECTION_VAL = "Sidewalks, Streets and Crossings (WALKING AUDIT)"
 WALK_AUDIT_STREET_Q    = "Which street are you auditing? Please indicate starting and ending locations."
 WALK_AUDIT_OVERALL_Q   = "Walkability of the area, based on the findings above:  "
+
+SEARCH_RADIUS = 200  # feet radius for nearby-crash queries
+
+malden_places = {
+    'Immigrant Learning Center'    : '442 Main Street Malden MA 02148',
+    'Malden Public Library'        : '36 Salem St., Malden, MA 02148',
+    'Malden High School'           : '77 Salem St, Malden, MA 02148',
+    'Malden City Hall'             : '215 Pleasant St, Malden, MA 02148',
+    'Ferryway School'              : '150 Cross St, Malden, MA 02148',
+    'Salemwood School'             : '529 Salem St, Malden, MA 02148',
+    'Beebe School'                 : '401 Pleasant St, Malden, MA 02148',
+    'Linden STEAM Academy'         : '29 Wescott St, Malden, MA 02148',
+    'Early Learning Center'        : '257 Mountain Ave, Malden, MA 02148',
+    'Forestdale School'            : '74 Sylvan Street, Malden, MA 02148',
+    'Oak Grove Station'            : '287 Washington St, Malden, MA 02148',
+    'MA 99 at Broadway Plaza '     : '62 Broadway, Malden, MA 02148',
+    'Fellsway & Salem'             : '104 Fellsway W, Medford, MA 02155'
+}
+
+intersections = {
+    'Centre St & Main St'          : [42.42535347779158, -71.06777785578645],
+    'Malden Center T Station'      : [442.42656324305639, -71.07355212589563],
+    'Commercial St & Charles St'   : [42.423278644928516, -71.07480992904118],
+    }

@@ -41,7 +41,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.constants import DB_PATH, OUT_DIR
 from src.load_data import load_crashes_from_db, load_malden_boundary, load_malden_roads
-from src.plot_counts import plot_crashes_over_time, plot_crashes_subplots_bar, plot_crashes_subplots_bar_yaxis
+from src.plot_counts import plot_crashes_over_time, plot_crashes_subplots_bar, plot_combined_crashes_subplots_bar
 from src.crash_utils import get_counts, filter_crashes, split_data_years, top_intersections, is_ped_crash, is_cyclist_crash
 from src.plot_spatial import plot_crashes_spatial
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # ── Time-series counts (all Malden crashes, full date range) ──────────────
     print("Loading crash data from database...")
 
-    start_year = 2021
+    start_year = 2015
     end_year = 2025
 
     crash_df = load_crashes_from_db(DB_PATH, start_year=start_year, end_year=end_year, malden_only=True)
@@ -80,7 +80,7 @@ if __name__ == '__main__':
 
     plot_crashes_subplots_bar(all_counts_df, OUT_DIR)
     plot_crashes_over_time(all_counts_df, OUT_DIR)
-    plot_crashes_subplots_bar_yaxis(all_counts_df, OUT_DIR)
+    plot_combined_crashes_subplots_bar(all_counts_df, OUT_DIR)
 
     # ── Spatial map (recent years, Malden boundary only) ─────────────────────
 
