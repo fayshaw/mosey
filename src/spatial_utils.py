@@ -2,11 +2,8 @@ import os
 import time
 from pathlib import Path
 
-import networkx as nx
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString
-from shapely.ops import unary_union
 
 from src.constants import ROAD_NETWORK_CACHE, SEARCH_RADIUS
 
@@ -33,7 +30,10 @@ def route_along_roads(G, start_lon, start_lat, end_lon, end_lat):
     Both points must be in EPSG:4326.
     Raises nx.NetworkXNoPath if no route exists between the two nodes.
     """
+    import networkx as nx
     import osmnx as ox
+    from shapely.geometry import LineString
+    from shapely.ops import unary_union
     orig = ox.distance.nearest_nodes(G, start_lon, start_lat)
     dest = ox.distance.nearest_nodes(G, end_lon, end_lat)
     route = nx.shortest_path(G, orig, dest, weight="length")
