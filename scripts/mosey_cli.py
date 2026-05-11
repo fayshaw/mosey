@@ -42,7 +42,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.constants import DB_PATH, OUT_DIR
 from src.load_data import load_crashes_from_db, load_malden_boundary, load_malden_roads
 from src.plot_counts import plot_crashes_over_time, plot_crashes_subplots_bar, plot_combined_crashes_subplots_bar
-from src.crash_utils import get_counts, filter_crashes, split_data_years, top_intersections, is_ped_crash, is_cyclist_crash
+from src.crash_utils import get_counts, filter_crashes, split_data_years, top_intersections, is_ped_crash, is_cycle_crash
 from src.plot_spatial import plot_crashes_spatial
 
 if __name__ == '__main__':
@@ -59,7 +59,7 @@ if __name__ == '__main__':
           f"({crash_df['crash_year'].min()}–{crash_df['crash_year'].max()})")
 
     ped_df   = crash_df[is_ped_crash(crash_df)]
-    cycle_df = crash_df[is_cyclist_crash(crash_df)]
+    cycle_df = crash_df[is_cycle_crash(crash_df)]
 
     crash_subsets = {
         'crash_counts':       crash_df,

@@ -45,7 +45,7 @@ def is_ped_crash(df):
     )
 
 
-def is_cyclist_crash(df):
+def is_cycle_crash(df):
     """True for rows where a cyclist was involved, regardless of event order."""
     return (
         (df['first_harmful_event'] == 'Collision with cyclist') |
@@ -73,10 +73,10 @@ def top_intersections(df, n=5):
                              bike_crashes, lat, lon, years_active
     """
     vuln = df[
-        (is_ped_crash(df) | is_cyclist_crash(df)) &
+        (is_ped_crash(df) | is_cycle_crash(df)) &
         df['latitude'].notna() &
         df['longitude'].notna()
-    ].copy()
+        ].copy()
 
     # Round to 3 decimal places (~100m) to cluster nearby crashes at the same intersection
     vuln['lat_r'] = vuln['latitude'].round(3)
@@ -115,7 +115,7 @@ def top_intersections(df, n=5):
             'intersection': best_label(cluster),
             'crashes':      len(cluster),
             'ped_crashes':  is_ped_crash(cluster).sum(),
-            'bike_crashes': is_cyclist_crash(cluster).sum(),
+            'bike_crashes': is_cycle_crash(cluster).sum(),
             'lat':          cluster['latitude'].mean(),
             'lon':          cluster['longitude'].mean(),
             'years_active': f"{int(cluster['crash_year'].min())}–{int(cluster['crash_year'].max())}",

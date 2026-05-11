@@ -32,10 +32,12 @@ import streamlit as st
 from dotenv import load_dotenv
 from src.spatial_utils import crashes_near_point
 from src.constants import SEARCH_RADIUS
-from src.crash_utils import is_ped_crash
+from src.crash_utils import is_ped_crash, is_cycle_crash
 
 START_YEAR = 2023
 END_YEAR = 2023
+FEET_TO_METERS = 3.281
+JITTER = 0.00003  # JITTER = 0.00003 is ~3 metres (~1 lane width) — separates stacked dots without leaving the road
 
 malden_places = {
     'Centre St & Main St'          : '205 Centre St, Malden, MA 02148',
@@ -81,26 +83,48 @@ def get_walk_score(lat, lon):
     """Get walkability score from WalkScore API"""
     load_dotenv()
     apikey = st.secrets['WALK_API']
-    url = 'http://api.walkscore.com/score?format=json&lat='+str(lat)+'&lon='+str(lon)+'&wsapikey='+apikey
-    r = requests.get(url)
+    params = {
+        'format'   : 'json',
+        'lat'     : lat,
+        'lon'     : lon,
+        'wsapikey': apikey,
+    }
+
+    r = requests.get('http://api.walkscore.com/score', params=params)
     data = r.json()
     return data['walkscore']
 
+_CYCLIST_ICON = folium.DivIcon(
+    html='<div style="width:0;height:0;'
+         'border-left:6px solid transparent;'
+         'border-right:6px solid transparent;'
+         'border-bottom:12px solid orange;"></div>',
+    icon_size=(12, 12),
+    icon_anchor=(6, 6),
+)
 
-
-JITTER = 0.00003  # JITTER = 0.00003 is ~3 metres (~1 lane width) — separates stacked dots without leaving the road
 
 def _make_crash_layers(df, map_obj):
-    """Add vectorized blue/red CircleMarker GeoJson layers to a Folium map."""
-    crash_coords = df.dropna(subset=['Latitude', 'Longitude']).rename(columns={
+    """Add vectorized blue/red/orange GeoJson crash layers to a Folium map."""
+    clean = df.dropna(subset=['Latitude', 'Longitude']).rename(columns={
         'First Harmful Event':              'first_harmful_event',
         'Vulnerable User Type (All Persons)': 'vuln_user_type',
     }).copy()
     rng = np.random.default_rng(seed=42)
-    crash_coords['_jlat'] = crash_coords['Latitude']  + rng.uniform(-JITTER, JITTER, len(crash_coords))
-    crash_coords['_jlon'] = crash_coords['Longitude'] + rng.uniform(-JITTER, JITTER, len(crash_coords))
-    is_ped = is_ped_crash(crash_coords)
-    for subset, color in [(crash_coords[~is_ped], 'blue'), (crash_coords[is_ped], 'red')]:
+    clean['_jlat'] = clean['Latitude']  + rng.uniform(-JITTER, JITTER, len(clean))
+    clean['_jlon'] = clean['Longitude'] + rng.uniform(-JITTER, JITTER, len(clean))
+
+    ped_mask   = is_ped_crash(clean)
+    cycle_mask = is_cycle_crash(clean) & ~ped_mask
+
+    layers = [
+        (clean[~ped_mask & ~cycle_mask], folium.CircleMarker(radius=3, weight=3, color='blue',
+                                          fill=True, fill_color='blue',   fill_opacity=0.6)),
+        (clean[ped_mask],                folium.CircleMarker(radius=3, weight=3, color='red',
+                                          fill=True, fill_color='red',    fill_opacity=0.6)),
+        (clean[cycle_mask],              folium.Marker(icon=_CYCLIST_ICON)),
+    ]
+    for subset, marker in layers:
         if subset.empty:
             continue
         lats = subset['_jlat'].to_numpy()
@@ -114,14 +138,7 @@ def _make_crash_layers(df, map_obj):
                 for la, lo in zip(lats, lons)
             ]
         }
-        folium.GeoJson(
-            geojson,
-            marker=folium.CircleMarker(
-                radius=3, weight=3, color=color,
-                fill=True, fill_color=color, fill_opacity=0.6
-            )
-        ).add_to(map_obj)
-
+        folium.GeoJson(geojson, marker=marker).add_to(map_obj)
 
 
 def plot_points(data, crash_df):
@@ -147,7 +164,7 @@ def plot_points(data, crash_df):
     
     folium.Circle(
         location=[lat_0, lon_0],
-        radius=SEARCH_RADIUS / 3.281,  # feet to metres
+        radius=SEARCH_RADIUS / FEET_TO_METERS,  # feet to metres
         color='gray',
         fill=True,
         fill_color='gray',
