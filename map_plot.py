@@ -32,9 +32,10 @@ import streamlit as st
 from dotenv import load_dotenv
 from src.spatial_utils import crashes_near_point
 from src.constants import SEARCH_RADIUS
+from src.crash_utils import is_ped_crash
 
-START_YEAR = 2015
-END_YEAR = 2025
+START_YEAR = 2023
+END_YEAR = 2023
 
 malden_places = {
     'Centre St & Main St'          : '205 Centre St, Malden, MA 02148',
@@ -87,15 +88,23 @@ def get_walk_score(lat, lon):
 
 
 
+JITTER = 0.00003  # JITTER = 0.00003 is ~3 metres (~1 lane width) — separates stacked dots without leaving the road
+
 def _make_crash_layers(df, map_obj):
     """Add vectorized blue/red CircleMarker GeoJson layers to a Folium map."""
-    clean = df.dropna(subset=['Latitude', 'Longitude'])
-    is_ped = clean['First Harmful Event'] == 'Collision with pedestrian'
-    for subset, color in [(clean[~is_ped], 'blue'), (clean[is_ped], 'red')]:
+    crash_coords = df.dropna(subset=['Latitude', 'Longitude']).rename(columns={
+        'First Harmful Event':              'first_harmful_event',
+        'Vulnerable User Type (All Persons)': 'vuln_user_type',
+    }).copy()
+    rng = np.random.default_rng(seed=42)
+    crash_coords['_jlat'] = crash_coords['Latitude']  + rng.uniform(-JITTER, JITTER, len(crash_coords))
+    crash_coords['_jlon'] = crash_coords['Longitude'] + rng.uniform(-JITTER, JITTER, len(crash_coords))
+    is_ped = is_ped_crash(crash_coords)
+    for subset, color in [(crash_coords[~is_ped], 'blue'), (crash_coords[is_ped], 'red')]:
         if subset.empty:
             continue
-        lats = subset['Latitude'].to_numpy()
-        lons = subset['Longitude'].to_numpy()
+        lats = subset['_jlat'].to_numpy()
+        lons = subset['_jlon'].to_numpy()
         geojson = {
             'type': 'FeatureCollection',
             'features': [
@@ -125,7 +134,7 @@ def plot_points(data, crash_df):
 
     zone_df = crashes_near_point(lat_0, lon_0, crash_df,
                                  lat_col='Latitude', lon_col='Longitude')
-    zone_df = zone_df[zone_df['Crash Year'] >= START_YEAR]
+    zone_df = zone_df[zone_df['Crash Year'].between(START_YEAR, END_YEAR)]
     crash_count = len(zone_df)
 
     m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=18)
