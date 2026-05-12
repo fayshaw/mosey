@@ -34,10 +34,11 @@ from src.constants import SEARCH_RADIUS
 from src.crash_utils import is_ped_crash, is_cycle_crash, is_fatal_ped_crash
 from src.load_data import load_crashes_from_db
 
-START_YEAR = 2023
-END_YEAR = 2023
+START_YEAR = 2021
+END_YEAR = 2025
 FEET_TO_METERS = 3.281
 JITTER = 0.00003  # JITTER = 0.00003 is ~3 metres (~1 lane width) — separates stacked dots without leaving the road
+MAX_ZOOM = 19
 
 malden_places = {
     'Centre St & Main St'          : '205 Centre St, Malden, MA 02148',
@@ -90,8 +91,8 @@ def get_walk_score(lat, lon):
     data = r.json()
     return data['walkscore']
 
-_S  = 14  # triangle size in pixels — change this one value to resize
-_SW = 2   # stroke width in pixels
+_S  = 13  # triangle size in pixels — change this one value to resize
+_SW = 1   # stroke width in pixels
 _P  = _SW # padding = stroke width keeps the outline inside the viewBox
 
 _CYCLIST_ICON = folium.DivIcon(
@@ -105,44 +106,76 @@ _CYCLIST_ICON = folium.DivIcon(
     icon_anchor=(_S//2, _S//2),
 )
 
+_FP_S = 22          # fatal-ped icon is larger than the cyclist triangle
+_FP_C = _FP_S // 2  # centre coordinate
+_FP_P = 5           # padding for X arms inside the circle
+
 _FATAL_PED_ICON = folium.DivIcon(
     html=(
-        f'<svg width="{_S}" height="{_S}" viewBox="0 0 {_S} {_S}">'
-        f'<line x1="{_P}" y1="{_P}" x2="{_S-_P}" y2="{_S-_P}" '
+        f'<svg width="{_FP_S}" height="{_FP_S}" viewBox="0 0 {_FP_S} {_FP_S}">'
+        f'<circle cx="{_FP_C}" cy="{_FP_C}" r="{_FP_C - 1}" '
+        f'fill="none" stroke="red" stroke-width="2"/>'
+        f'<line x1="{_FP_P}" y1="{_FP_P}" x2="{_FP_S-_FP_P}" y2="{_FP_S-_FP_P}" '
         f'stroke="maroon" stroke-width="3"/>'
-        f'<line x1="{_S-_P}" y1="{_P}" x2="{_P}" y2="{_S-_P}" '
+        f'<line x1="{_FP_S-_FP_P}" y1="{_FP_P}" x2="{_FP_P}" y2="{_FP_S-_FP_P}" '
         f'stroke="maroon" stroke-width="3"/>'
         f'</svg>'
     ),
-    icon_size=(_S, _S),
-    icon_anchor=(_S//2, _S//2),
+    icon_size=(_FP_S, _FP_S),
+    icon_anchor=(_FP_C, _FP_C),
 )
 
 
 def _make_crash_layers(df, map_obj):
-    """Add vectorized blue/red/orange GeoJson crash layers to a Folium map."""
+    """Add vectorized GeoJson crash layers.
+
+    Jitter rules:
+      - Car crashes: jitter when 2+ car crashes share exact coordinates.
+      - Non-fatal ped / cyclist: jitter when their location is shared with
+        any other crash (catches bike-over-fatal-ped stacking).
+      - Fatal ped: never jittered — always plotted at the exact location.
+    """
     crash_coords = df.dropna(subset=['latitude', 'longitude']).copy()
-    rng = np.random.default_rng(seed=42)
-    crash_coords['_jlat'] = crash_coords['latitude']  + rng.uniform(-JITTER, JITTER, len(crash_coords))
-    crash_coords['_jlon'] = crash_coords['longitude'] + rng.uniform(-JITTER, JITTER, len(crash_coords))
 
     ped_mask       = is_ped_crash(crash_coords)
     fatal_ped_mask = is_fatal_ped_crash(crash_coords)
     cycle_mask     = is_cycle_crash(crash_coords) & ~ped_mask
 
+    # Total crashes at each location, all types combined
+    loc_count = crash_coords.groupby(['latitude', 'longitude'])['latitude'].transform('size')
+
+    rng = np.random.default_rng(seed=42)
+
+    def _jitter(subset, overlap):
+        """Return copy of subset with _jlat/_jlon; jitter rows where overlap is True."""
+        out = subset.copy()
+        out['_jlat'] = out['latitude']
+        out['_jlon'] = out['longitude']
+        n = int(overlap.sum())
+        if n:
+            out.loc[overlap, '_jlat'] += rng.uniform(-JITTER, JITTER, n)
+            out.loc[overlap, '_jlon'] += rng.uniform(-JITTER, JITTER, n)
+        return out
+
+    car_mask = ~ped_mask & ~cycle_mask
+    car_df   = _jitter(crash_coords[car_mask],
+                       crash_coords[car_mask].groupby(['latitude', 'longitude'])['latitude'].transform('size') > 1)
+    ped_df   = _jitter(crash_coords[ped_mask & ~fatal_ped_mask], loc_count[ped_mask & ~fatal_ped_mask] > 1)
+    cycle_df = _jitter(crash_coords[cycle_mask],                 loc_count[cycle_mask] > 1)
+
     layers = [
-        (crash_coords[~ped_mask & ~cycle_mask], folium.CircleMarker(radius=3, weight=3, color='blue',
-                                                                    fill=True, fill_color='blue', fill_opacity=0.6)),
-        (crash_coords[ped_mask & ~fatal_ped_mask], folium.CircleMarker(radius=3, weight=3, color='red',
-                                                                       fill=True, fill_color='red', fill_opacity=0.6)),
-        (crash_coords[cycle_mask],     folium.Marker(icon=_CYCLIST_ICON)),
-        (crash_coords[fatal_ped_mask], folium.Marker(icon=_FATAL_PED_ICON)),
+        (car_df,                         '_jlat', '_jlon', folium.CircleMarker(radius=3, weight=3, color='blue',
+                                                                               fill=True, fill_color='blue', fill_opacity=0.6)),
+        (ped_df,                         '_jlat', '_jlon', folium.CircleMarker(radius=3, weight=3, color='red',
+                                                                               fill=True, fill_color='red',  fill_opacity=0.6)),
+        (cycle_df,                       '_jlat', '_jlon', folium.Marker(icon=_CYCLIST_ICON)),
+        (crash_coords[fatal_ped_mask], 'latitude', 'longitude', folium.Marker(icon=_FATAL_PED_ICON)),
     ]
-    for subset, marker in layers:
+    for subset, lat_col, lon_col, marker in layers:
         if subset.empty:
             continue
-        lats = subset['_jlat'].to_numpy()
-        lons = subset['_jlon'].to_numpy()
+        lats = subset[lat_col].to_numpy()
+        lons = subset[lon_col].to_numpy()
         geojson = {
             'type': 'FeatureCollection',
             'features': [
@@ -167,7 +200,7 @@ def plot_points(data, crash_df):
     zone_df = zone_df[zone_df['crash_year'].between(START_YEAR, END_YEAR)]
     crash_count = len(zone_df)
 
-    m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=18)
+    m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=18, max_zoom=MAX_ZOOM)
 
     m.add_child(
         folium.Marker(
@@ -187,7 +220,7 @@ def plot_points(data, crash_df):
     _make_crash_layers(zone_df, m)
     # Plot all crashes for END_YEAR
     crashes_end_year_df = crash_df[crash_df['crash_year'] == END_YEAR]
-    map_year = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=15)
+    map_year = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=15, max_zoom=MAX_ZOOM)
 
     map_year.add_child(
         folium.Marker(

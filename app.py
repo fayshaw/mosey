@@ -52,9 +52,30 @@ _year_range = str(_start) if _start == _end else f"{_start}–{_end}"
 st.subheader("Malden location with nearby car crashes")
 st.write(f"⬅️ In the sidebar, input an address or choose a point of interest to visualize the number of \
 nearby car crashes for {_year_range} (red number).")
+
+st.markdown("""
+<div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;
+            margin:4px 0 10px 0; font-size:0.875rem;">
+  <span><svg width="12" height="12" viewBox="0 0 12 12">
+    <circle cx="6" cy="6" r="5" fill="blue"/>
+  </svg>&nbsp;Car crash</span>
+  <span><svg width="12" height="12" viewBox="0 0 12 12">
+    <circle cx="6" cy="6" r="5" fill="red"/>
+  </svg>&nbsp;Crash with pedestrian</span>
+  <span><svg width="13" height="13" viewBox="0 0 13 13">
+    <polygon points="6,1 12,12 1,12" fill="orange" stroke="saddlebrown" stroke-width="1"/>
+  </svg>&nbsp;Crash with cyclist</span>
+  <span><svg width="22" height="22" viewBox="0 0 22 22">
+    <circle cx="11" cy="11" r="10" fill="none" stroke="red" stroke-width="2"/>
+    <line x1="5" y1="5" x2="17" y2="17" stroke="maroon" stroke-width="3"/>
+    <line x1="17" y1="5" x2="5" y2="17" stroke="maroon" stroke-width="3"/>
+  </svg>&nbsp;Fatal pedestrian</span>
+</div>
+""", unsafe_allow_html=True)
+
 folium_static(m, width=600)
-st.markdown(f'<div class="my-caption">Map centered at input address with crashes for {_year_range}. \
-            Blue = car crashes, red = pedestrian crashes, orange triangle = cyclist crashes, maroon X = fatal pedestrian crashes.<br><br></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="my-caption">Map centered at input address with crashes for {_year_range}.<br><br></div>',
+            unsafe_allow_html=True)
 
 
 st.subheader("Interactive Map of Malden")
@@ -75,11 +96,11 @@ st.markdown(
 )
 
 st.markdown(f'<div class="my-caption">Car crash data for {_end}, map centered at the address input. \
-           Blue = car crashes, red = pedestrian crashes, orange triangle = cyclist crashes, maroon X = fatal pedestrian crashes. \
-           The gray circle indicates the search radius used for the MOSEY crash count.<br><br></div>', unsafe_allow_html=True)
+           The gray circle indicates the search radius used for the MOSEY crash count.<br><br></div>',
+           unsafe_allow_html=True)
 
 st.subheader("Historical Car Crash Data for Malden, 2015-2025")
-st.image('figures/Malden_crashes_2015-2025.png')
+st.image('figures/Malden_crash_trends_2015-2025.png')
 st.markdown('<div class="my-caption">Car crashes and pedestrian crashes from January 2015 to November 2025.</div>', unsafe_allow_html=True)
 st.write("Car crash data is from the [Massachusetts Department of Transportation (MassDOT) Crash Data Portal](https://apps.crashdata.dot.mass.gov/cdp/home).")
 
