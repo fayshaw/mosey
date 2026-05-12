@@ -53,6 +53,11 @@ def is_cycle_crash(df):
     )
 
 
+def is_fatal_ped_crash(df):
+    """True for rows where a pedestrian was fatally injured."""
+    return is_ped_crash(df) & (df['crash_severity'] == 'Fatal injury')
+
+
 def top_intersections(df, n=5):
     """
     Find the top N intersections by crash count for vulnerable road users.

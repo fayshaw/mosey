@@ -26,13 +26,13 @@ Author: fayshaw
 import numpy as np
 import folium
 import requests
-import pandas as pd
 import re
 import streamlit as st
 from dotenv import load_dotenv
 from src.spatial_utils import crashes_near_point
-from src.constants import SEARCH_RADIUS, COLUMN_MAP
-from src.crash_utils import is_ped_crash, is_cycle_crash
+from src.constants import SEARCH_RADIUS
+from src.crash_utils import is_ped_crash, is_cycle_crash, is_fatal_ped_crash
+from src.load_data import load_crashes_from_db
 
 START_YEAR = 2023
 END_YEAR = 2023
@@ -52,11 +52,8 @@ malden_places = {
 
 @st.cache_data
 def load_data():
-    """Load crash data from CSV, columns renamed to DB schema names."""
-    crash_df = pd.read_csv('data_sources/Malden_crashesJan2015-1Dec2025.csv',
-                           skipfooter=3, engine='python',
-                           dtype={'Crash Year': 'Int32', 'Speed Limit': 'Int32'})
-    return crash_df.rename(columns={k: v for k, v in COLUMN_MAP.items() if k in crash_df.columns})
+    """Load crash data from the database (columns already in DB schema names)."""
+    return load_crashes_from_db(malden_only=True)
 
 
 def geocode(address: str) -> requests.Response:
@@ -93,7 +90,7 @@ def get_walk_score(lat, lon):
     data = r.json()
     return data['walkscore']
 
-_S  = 16  # triangle size in pixels — change this one value to resize
+_S  = 14  # triangle size in pixels — change this one value to resize
 _SW = 2   # stroke width in pixels
 _P  = _SW # padding = stroke width keeps the outline inside the viewBox
 
@@ -108,6 +105,19 @@ _CYCLIST_ICON = folium.DivIcon(
     icon_anchor=(_S//2, _S//2),
 )
 
+_FATAL_PED_ICON = folium.DivIcon(
+    html=(
+        f'<svg width="{_S}" height="{_S}" viewBox="0 0 {_S} {_S}">'
+        f'<line x1="{_P}" y1="{_P}" x2="{_S-_P}" y2="{_S-_P}" '
+        f'stroke="maroon" stroke-width="3"/>'
+        f'<line x1="{_S-_P}" y1="{_P}" x2="{_P}" y2="{_S-_P}" '
+        f'stroke="maroon" stroke-width="3"/>'
+        f'</svg>'
+    ),
+    icon_size=(_S, _S),
+    icon_anchor=(_S//2, _S//2),
+)
+
 
 def _make_crash_layers(df, map_obj):
     """Add vectorized blue/red/orange GeoJson crash layers to a Folium map."""
@@ -116,15 +126,17 @@ def _make_crash_layers(df, map_obj):
     crash_coords['_jlat'] = crash_coords['latitude']  + rng.uniform(-JITTER, JITTER, len(crash_coords))
     crash_coords['_jlon'] = crash_coords['longitude'] + rng.uniform(-JITTER, JITTER, len(crash_coords))
 
-    ped_mask   = is_ped_crash(crash_coords)
-    cycle_mask = is_cycle_crash(crash_coords) & ~ped_mask
+    ped_mask       = is_ped_crash(crash_coords)
+    fatal_ped_mask = is_fatal_ped_crash(crash_coords)
+    cycle_mask     = is_cycle_crash(crash_coords) & ~ped_mask
 
     layers = [
         (crash_coords[~ped_mask & ~cycle_mask], folium.CircleMarker(radius=3, weight=3, color='blue',
                                                                     fill=True, fill_color='blue', fill_opacity=0.6)),
-        (crash_coords[ped_mask], folium.CircleMarker(radius=3, weight=3, color='red',
-                                                     fill=True, fill_color='red', fill_opacity=0.6)),
-        (crash_coords[cycle_mask], folium.Marker(icon=_CYCLIST_ICON)),
+        (crash_coords[ped_mask & ~fatal_ped_mask], folium.CircleMarker(radius=3, weight=3, color='red',
+                                                                       fill=True, fill_color='red', fill_opacity=0.6)),
+        (crash_coords[cycle_mask],     folium.Marker(icon=_CYCLIST_ICON)),
+        (crash_coords[fatal_ped_mask], folium.Marker(icon=_FATAL_PED_ICON)),
     ]
     for subset, marker in layers:
         if subset.empty:

@@ -54,7 +54,7 @@ st.write(f"⬅️ In the sidebar, input an address or choose a point of interest
 nearby car crashes for {_year_range} (red number).")
 folium_static(m, width=600)
 st.markdown(f'<div class="my-caption">Map centered at input address with crashes for {_year_range}. \
-            Blue dots indicate car crashes and red dots indicate car crashes with pedestrians.<br><br></div>', unsafe_allow_html=True)
+            Blue = car crashes, red = pedestrian crashes, orange triangle = cyclist crashes, maroon X = fatal pedestrian crashes.<br><br></div>', unsafe_allow_html=True)
 
 
 st.subheader("Interactive Map of Malden")
@@ -74,10 +74,9 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown(f'<div class="my-caption">Car crash data for {_end}, map centered at the address input. Blue dots indicate car crashes\
-           and red dots indicate car crashes with pedestrians. The gray box indicates search space for \
-           car accidents that go into the MOSEY calculation. Blue dots indicate car crashes\
-           and red dots indicate car crashes with pedestrians.<br><br></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="my-caption">Car crash data for {_end}, map centered at the address input. \
+           Blue = car crashes, red = pedestrian crashes, orange triangle = cyclist crashes, maroon X = fatal pedestrian crashes. \
+           The gray circle indicates the search radius used for the MOSEY crash count.<br><br></div>', unsafe_allow_html=True)
 
 st.subheader("Historical Car Crash Data for Malden, 2015-2025")
 st.image('figures/Malden_crashes_2015-2025.png')

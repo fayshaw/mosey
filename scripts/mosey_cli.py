@@ -92,7 +92,7 @@ if __name__ == '__main__':
 #    years = [2015, 2016, 2017, 2018, 2019]
     #min_year, max_year = min(years), max(years)
     map_df = load_crashes_from_db(DB_PATH, start_year=start_year, end_year=end_year, malden_only=True)
-    """
+
     plot_crashes_spatial(
         map_df, malden_gdf, malden_roads,
         title=f'Malden Car Crashes {start_year}-{end_year}',
@@ -107,7 +107,7 @@ if __name__ == '__main__':
             title=f'Malden Car Crashes {year}',
             save_path=OUT_DIR / f'crashes_spatial_{year}.png'
         )
-    """
+
 
     # TODO: walk audit map — add when walk_audit.py pipeline is complete
     # plot_walk_audit_map(gdf_points, gdf_lines, malden_gdf, malden_roads, RATING_COLOR)
