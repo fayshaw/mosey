@@ -31,7 +31,7 @@ import re
 import streamlit as st
 from dotenv import load_dotenv
 from src.spatial_utils import crashes_near_point
-from src.constants import SEARCH_RADIUS
+from src.constants import SEARCH_RADIUS, COLUMN_MAP
 from src.crash_utils import is_ped_crash, is_cycle_crash
 
 START_YEAR = 2023
@@ -52,12 +52,11 @@ malden_places = {
 
 @st.cache_data
 def load_data():
-    """Load crash data from CSV file"""
-    folder = 'data_sources/'
-    crash_file =  'Malden_crashesJan2015-1Dec2025.csv' # 2015-2025 crash data
-    crash_df = pd.read_csv(folder + crash_file, skipfooter=3, engine='python',
-                    dtype={'year': 'Int32', 'speed_limit': 'Int32'})
-    return crash_df
+    """Load crash data from CSV, columns renamed to DB schema names."""
+    crash_df = pd.read_csv('data_sources/Malden_crashesJan2015-1Dec2025.csv',
+                           skipfooter=3, engine='python',
+                           dtype={'Crash Year': 'Int32', 'Speed Limit': 'Int32'})
+    return crash_df.rename(columns={k: v for k, v in COLUMN_MAP.items() if k in crash_df.columns})
 
 
 def geocode(address: str) -> requests.Response:
@@ -94,35 +93,38 @@ def get_walk_score(lat, lon):
     data = r.json()
     return data['walkscore']
 
+_S  = 16  # triangle size in pixels — change this one value to resize
+_SW = 2   # stroke width in pixels
+_P  = _SW # padding = stroke width keeps the outline inside the viewBox
+
 _CYCLIST_ICON = folium.DivIcon(
-    html='<div style="width:0;height:0;'
-         'border-left:6px solid transparent;'
-         'border-right:6px solid transparent;'
-         'border-bottom:12px solid orange;"></div>',
-    icon_size=(12, 12),
-    icon_anchor=(6, 6),
+    html=(
+        f'<svg width="{_S}" height="{_S}" viewBox="0 0 {_S} {_S}">'
+        f'<polygon points="{_S//2},{_P} {_S-_P},{_S-_P} {_P},{_S-_P}" '
+        f'fill="orange" stroke="saddlebrown" stroke-width="{_SW}"/>'
+        f'</svg>'
+    ),
+    icon_size=(_S, _S),
+    icon_anchor=(_S//2, _S//2),
 )
 
 
 def _make_crash_layers(df, map_obj):
     """Add vectorized blue/red/orange GeoJson crash layers to a Folium map."""
-    clean = df.dropna(subset=['Latitude', 'Longitude']).rename(columns={
-        'First Harmful Event':              'first_harmful_event',
-        'Vulnerable User Type (All Persons)': 'vuln_user_type',
-    }).copy()
+    crash_coords = df.dropna(subset=['latitude', 'longitude']).copy()
     rng = np.random.default_rng(seed=42)
-    clean['_jlat'] = clean['Latitude']  + rng.uniform(-JITTER, JITTER, len(clean))
-    clean['_jlon'] = clean['Longitude'] + rng.uniform(-JITTER, JITTER, len(clean))
+    crash_coords['_jlat'] = crash_coords['latitude']  + rng.uniform(-JITTER, JITTER, len(crash_coords))
+    crash_coords['_jlon'] = crash_coords['longitude'] + rng.uniform(-JITTER, JITTER, len(crash_coords))
 
-    ped_mask   = is_ped_crash(clean)
-    cycle_mask = is_cycle_crash(clean) & ~ped_mask
+    ped_mask   = is_ped_crash(crash_coords)
+    cycle_mask = is_cycle_crash(crash_coords) & ~ped_mask
 
     layers = [
-        (clean[~ped_mask & ~cycle_mask], folium.CircleMarker(radius=3, weight=3, color='blue',
-                                          fill=True, fill_color='blue',   fill_opacity=0.6)),
-        (clean[ped_mask],                folium.CircleMarker(radius=3, weight=3, color='red',
-                                          fill=True, fill_color='red',    fill_opacity=0.6)),
-        (clean[cycle_mask],              folium.Marker(icon=_CYCLIST_ICON)),
+        (crash_coords[~ped_mask & ~cycle_mask], folium.CircleMarker(radius=3, weight=3, color='blue',
+                                                                    fill=True, fill_color='blue', fill_opacity=0.6)),
+        (crash_coords[ped_mask], folium.CircleMarker(radius=3, weight=3, color='red',
+                                                     fill=True, fill_color='red', fill_opacity=0.6)),
+        (crash_coords[cycle_mask], folium.Marker(icon=_CYCLIST_ICON)),
     ]
     for subset, marker in layers:
         if subset.empty:
@@ -149,9 +151,8 @@ def plot_points(data, crash_df):
     lat_0 = float(data[0]["lat"])
     lon_0 = float(data[0]["lon"])
 
-    zone_df = crashes_near_point(lat_0, lon_0, crash_df,
-                                 lat_col='Latitude', lon_col='Longitude')
-    zone_df = zone_df[zone_df['Crash Year'].between(START_YEAR, END_YEAR)]
+    zone_df = crashes_near_point(lat_0, lon_0, crash_df)
+    zone_df = zone_df[zone_df['crash_year'].between(START_YEAR, END_YEAR)]
     crash_count = len(zone_df)
 
     m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=18)
@@ -173,7 +174,7 @@ def plot_points(data, crash_df):
 
     _make_crash_layers(zone_df, m)
     # Plot all crashes for END_YEAR
-    crashes_end_year_df = crash_df[crash_df['Crash Year'] == END_YEAR]
+    crashes_end_year_df = crash_df[crash_df['crash_year'] == END_YEAR]
     map_year = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=15)
 
     map_year.add_child(
