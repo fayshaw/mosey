@@ -45,16 +45,20 @@ m, map_year, score = map_plot.plot_points(data, crash_df)
 
 ##########  MAP ########## 
 
+_start = map_plot.START_YEAR
+_end   = map_plot.END_YEAR
+_year_range = str(_start) if _start == _end else f"{_start}–{_end}"
+
 st.subheader("Malden location with nearby car crashes")
-st.write("⬅️ In the sidebar, input an address or choose a point of interest to visualize the number of \
-nearby car crashes from 2015-2025 (red number).")
+st.write(f"⬅️ In the sidebar, input an address or choose a point of interest to visualize the number of \
+nearby car crashes for {_year_range} (red number).")
 folium_static(m, width=600)
-st.markdown('<div class="my-caption">Map centered at input address with crashes for January 2015 - November 2025. \
+st.markdown(f'<div class="my-caption">Map centered at input address with crashes for {_year_range}. \
             Blue dots indicate car crashes and red dots indicate car crashes with pedestrians.<br><br></div>', unsafe_allow_html=True)
 
 
 st.subheader("Interactive Map of Malden")
-st.write("Map with car crash data from January - November 2025")
+st.write(f"Map with car crash data for {_end}")
 folium_static(map_year, width=600)
 
 st.markdown(
@@ -70,7 +74,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown('<div class="my-caption">Car crash data for 2025 (up to November 2025), map centered at the address input. Blue dots indicate car crashes\
+st.markdown(f'<div class="my-caption">Car crash data for {_end}, map centered at the address input. Blue dots indicate car crashes\
            and red dots indicate car crashes with pedestrians. The gray box indicates search space for \
            car accidents that go into the MOSEY calculation. Blue dots indicate car crashes\
            and red dots indicate car crashes with pedestrians.<br><br></div>', unsafe_allow_html=True)
@@ -126,8 +130,8 @@ if score > 0:
 else:
     text_color = 'black'
 st.sidebar.markdown(f"<h2 style='font-size: 24px; color:{text_color}'>Car Crash Count: {score}</h1>", unsafe_allow_html=True)
-st.sidebar.write("This is the count of nearby car crashes since 2015. These points of interest have high Walk Scores, \
-                  but poor safety. A walkability score needs to include pedestrian safety.") 
+st.sidebar.write(f"This is the count of nearby car crashes for {_year_range}. These points of interest have high Walk Scores, \
+                  but poor safety. A walkability score needs to include pedestrian safety.")
 
 lat_0 = float(data[0]["lat"])
 lon_0 = float(data[0]["lon"])
