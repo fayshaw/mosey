@@ -15,33 +15,48 @@ st.subheader("A safety walkability tool for pedestrians")
 st.write("The project is an examination of walkability with respect to pedestrian safety. \
 It shows car crash data in Malden, MA, a city north of Boston with a population of 66,000. ")
 
-########## SIDE BAR - ADDRESS INPUT #############
-def clear_text():
-    st.session_state["user_input"] = ""
+########## SIDE BAR - INPUT MODE #############
+mode = st.sidebar.radio("Find a location by:", ["Address", "Intersection", "Point of Interest"])
 
-address_input = st.sidebar.text_input("Type the full address in Malden and press enter.", 
-                                      "422 Main St, Malden 02148", key="user_input")
-st.sidebar.button("Clear", on_click=clear_text)
+if mode == "Address":
+    raw_addr = st.sidebar.text_input("Street address (e.g. 422 Main St)", "422 Main St", key="addr_input")
+    if not raw_addr.strip():
+        st.info("Enter a street address in the sidebar.")
+        st.stop()
+    try:
+        lat_0, lon_0, label = map_plot.geocode_address(raw_addr)
+    except ValueError as e:
+        st.error(f"Address not found — try just the street number and name. Details: {e}")
+        st.stop()
 
-places_dict = map_plot.malden_places
-place_list = list(places_dict.keys())
+elif mode == "Intersection":
+    street1 = st.sidebar.text_input("Street 1 (e.g. Main St)", key="st1_input")
+    street2 = st.sidebar.text_input("Street 2 (e.g. Salem St)", key="st2_input")
+    if not street1.strip() or not street2.strip():
+        st.info("Enter both street names in the sidebar.")
+        st.stop()
+    try:
+        lat_0, lon_0, label = map_plot.geocode_intersection(street1, street2)
+    except ValueError as e:
+        st.error(f"Intersection not found — check the street names. ({e})")
+        st.stop()
 
-st.sidebar.write("To choose from one of the points of interest, clear the text box.")
-st.sidebar.markdown("# Points of Interest")
-location = st.sidebar.radio("Points of Interest", place_list, label_visibility="collapsed")
-address = map_plot.malden_places[location]
+else:  # Point of Interest
+    places_dict = map_plot.malden_places
+    place_list = list(places_dict.keys())
+    st.sidebar.markdown("### Points of Interest")
+    location = st.sidebar.radio("Points of Interest", place_list, label_visibility="collapsed")
+    try:
+        lat_0, lon_0, label = map_plot.geocode_address(places_dict[location])
+    except ValueError as e:
+        st.error(f"Could not geocode point of interest: {e}")
+        st.stop()
 
-if address_input:
-    address = address_input # + " Malden MA 02148"
-else:
-    address = map_plot.malden_places[location]
-       
-########## END SIDE BAR - ADDRESS INPUT #############
-
-data = map_plot.geocode(address).json()  
+########## END SIDE BAR - INPUT MODE #############
 
 crash_df = map_plot.load_data()
-m, map_year, score = map_plot.plot_points(data, crash_df)
+m, map_year, score = map_plot.plot_points(lat_0, lon_0, label, crash_df,
+                                          show_marker=(mode != "Intersection"))
 
 ##########  MAP ########## 
 
@@ -153,10 +168,6 @@ st.sidebar.markdown(f"<h2 style='font-size: 24px; color:{text_color}'>Car Crash 
 st.sidebar.write(f"This is the count of nearby car crashes for {_year_range}. These points of interest have high Walk Scores, \
                   but poor safety. A walkability score needs to include pedestrian safety.")
 
-lat_0 = float(data[0]["lat"])
-lon_0 = float(data[0]["lon"])
-
-# Walk score
 walk_score = map_plot.get_walk_score(lat_0, lon_0)
 #st.sidebar.image(['figures/walkscore-api-logo.png'](https://www.walkscore.com/how-it-works/))
 #st.sidebar.markdown(f"<h1 style='font-size: 24px;'>Walk Score&#174: {walk_score}</h1>", unsafe_allow_html=True)
