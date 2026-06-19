@@ -41,16 +41,28 @@ END_YEAR = 2025
 FEET_TO_METERS = 3.281
 JITTER = 0.00003  # JITTER = 0.00003 is ~3 metres (~1 lane width) — separates stacked dots without leaving the road
 MAX_ZOOM = 19
+SCHOOL_RADIUS = 300  # feet — wider search area around school buildings
 
 malden_places = {
-    'Centre St & Main St'          : '205 Centre St, Malden, MA 02148',
-    'Main St & Salem St'           : '442 Main Street Malden MA 02148',
-    'Centre St & Charles St'       : '185 Centre St, Malden, MA 02148',
-    'Beebe School'                 : '401 Pleasant St, Malden, MA 02148',
-    'Ferryway School'              : '150 Cross St, Malden, MA 02148',  
-    'Malden Center T Station'      : '30 Commercial St, Malden, MA 02148',
-    'MA 99 at Broadway Plaza '     : '62 Broadway, Malden, MA 02148',
-    }
+    # Dangerous Intersections — geocoded via Geocodio
+    'Centre St & Main St':        {'type': 'intersection', 'street1': 'Centre St',    'street2': 'Main St'},
+    'Main St & Salem St':         {'type': 'intersection', 'street1': 'Main St',      'street2': 'Salem St'},
+    'Centre St & Charles St':     {'type': 'intersection', 'street1': 'Centre St',    'street2': 'Charles St'},
+    # Schools — wider search radius
+    'Malden High School':         {'type': 'address', 'address': '77 Salem St',       'radius': SCHOOL_RADIUS},
+    'Beebe School':               {'type': 'address', 'address': '401 Pleasant St',   'radius': SCHOOL_RADIUS},
+    'Ferryway School':            {'type': 'address', 'address': '150 Cross St',      'radius': SCHOOL_RADIUS},
+    'Salemwood School':           {'type': 'address', 'address': '529 Salem St',      'radius': SCHOOL_RADIUS},
+    'Linden STEAM Academy':       {'type': 'address', 'address': '29 Wescott St',     'radius': SCHOOL_RADIUS},
+    'Forestdale School':          {'type': 'address', 'address': '74 Sylvan St',      'radius': SCHOOL_RADIUS},
+    'Early Learning Center':      {'type': 'address', 'address': '257 Mountain Ave',  'radius': SCHOOL_RADIUS},
+    # Other Points of Intersest
+    'Malden Center T Station':    {'type': 'address', 'address': '30 Commercial St'},
+    'MA 99 at Broadway Plaza':    {'type': 'address', 'address': '62 Broadway'},
+    'Immigrant Learning Center':  {'type': 'address', 'address': '442 Main Street'},
+    'Malden City Hall':           {'type': 'address', 'address': '215 Pleasant St'},
+    'Oak Grove Station':          {'type': 'address', 'address': '287 Washington St'},
+}
 
 
 @st.cache_data
@@ -245,9 +257,10 @@ def _make_crash_layers(df, map_obj):
         folium.GeoJson(geojson, marker=marker).add_to(map_obj)
 
 
-def plot_points(lat_0: float, lon_0: float, label: str, crash_df, show_marker: bool = True):
+def plot_points(lat_0: float, lon_0: float, label: str, crash_df, show_marker: bool = True, radius: int = None):
     """Build the two Folium maps and return (zoomed_map, city_map, crash_count)."""
-    zone_df = crashes_near_point(lat_0, lon_0, crash_df)
+    r = radius or SEARCH_RADIUS
+    zone_df = crashes_near_point(lat_0, lon_0, crash_df, radius_ft=r)
     zone_df = zone_df[zone_df['crash_year'].between(START_YEAR, END_YEAR)]
     crash_count = len(zone_df)
 
@@ -256,7 +269,7 @@ def plot_points(lat_0: float, lon_0: float, label: str, crash_df, show_marker: b
         m.add_child(folium.Marker(location=[lat_0, lon_0], popup=label, icon=folium.Icon(color='blue')))
     folium.Circle(
         location=[lat_0, lon_0],
-        radius=SEARCH_RADIUS / FEET_TO_METERS,
+        radius=r / FEET_TO_METERS,
         color='gray', fill=True, fill_color='gray', fill_opacity=0.15,
     ).add_to(m)
     _make_crash_layers(zone_df, m)

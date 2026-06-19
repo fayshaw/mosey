@@ -17,6 +17,7 @@ It shows car crash data in Malden, MA, a city north of Boston with a population 
 
 ########## SIDE BAR - INPUT MODE #############
 mode = st.sidebar.radio("Find a location by:", ["Address", "Intersection", "Point of Interest"])
+poi_radius = None
 
 if mode == "Address":
     raw_addr = st.sidebar.text_input("Street address (e.g. 422 Main St)", "422 Main St", key="addr_input")
@@ -46,8 +47,13 @@ else:  # Point of Interest
     place_list = list(places_dict.keys())
     st.sidebar.markdown("### Points of Interest")
     location = st.sidebar.radio("Points of Interest", place_list, label_visibility="collapsed")
+    poi = places_dict[location]
+    poi_radius = poi.get('radius', None)
     try:
-        lat_0, lon_0, label = map_plot.geocode_address(places_dict[location])
+        if poi['type'] == 'intersection':
+            lat_0, lon_0, label = map_plot.geocode_intersection(poi['street1'], poi['street2'])
+        else:
+            lat_0, lon_0, label = map_plot.geocode_address(poi['address'])
     except ValueError as e:
         st.error(f"Could not geocode point of interest: {e}")
         st.stop()
@@ -56,7 +62,8 @@ else:  # Point of Interest
 
 crash_df = map_plot.load_data()
 m, map_year, score = map_plot.plot_points(lat_0, lon_0, label, crash_df,
-                                          show_marker=(mode != "Intersection"))
+                                          show_marker=(mode != "Intersection"),
+                                          radius=poi_radius)
 
 ##########  MAP ########## 
 
