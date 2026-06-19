@@ -108,21 +108,32 @@ def geocode_intersection(street1: str, street2: str) -> tuple:
 
     Returns (lat, lon, label). Raises ValueError if not found.
     """
-    from geocodio import Geocodio
     key = _get_geocodio_key()
-    client = Geocodio(key)
     label = f"{street1.strip()} & {street2.strip()}"
     query = f"{label}, Malden, MA 02148"
     try:
+        # pygeocodio 2.x (installed as geocodio, exports GeocodioClient)
+        from geocodio import GeocodioClient
+        client = GeocodioClient(key)
+        response = client.geocode(query)
+        coords = response.coords        # returns (lat, lng) or None
+        if coords is None:
+            raise ValueError(f"Intersection not found: {query!r}")
+        lat, lon = coords
+    except ImportError:
+        # geocodio 2.x (exports Geocodio, response.results[0].location)
+        from geocodio import Geocodio
+        client = Geocodio(key)
         response = client.geocode(query)
         if not response.results:
             raise ValueError(f"Intersection not found: {query!r}")
         loc = response.results[0].location
-        return loc.lat, loc.lng, label
+        lat, lon = loc.lat, loc.lng
     except ValueError:
         raise
     except Exception as e:
         raise ValueError(f"Geocoding error for {query!r}: {e}")
+    return lat, lon, label
 
 
 def get_addr_str(addr_dict):
@@ -220,11 +231,11 @@ def _make_crash_layers(df, map_obj):
     cycle_df = _jitter(crash_coords[cycle_mask],                 loc_count[cycle_mask] > 1)
 
     layers = [
-        (car_df,                         '_jlat', '_jlon', folium.CircleMarker(radius=3, weight=3, color='blue',
-                                                                               fill=True, fill_color='blue', fill_opacity=0.6)),
-        (ped_df,                         '_jlat', '_jlon', folium.CircleMarker(radius=3, weight=3, color='red',
-                                                                               fill=True, fill_color='red',  fill_opacity=0.6)),
-        (cycle_df,                       '_jlat', '_jlon', folium.Marker(icon=_CYCLIST_ICON)),
+        (car_df, '_jlat', '_jlon', folium.CircleMarker(radius=3, weight=3, color='blue',
+                 fill=True, fill_color='blue', fill_opacity=0.6)),
+        (ped_df, '_jlat', '_jlon', folium.CircleMarker(radius=3, weight=3, color='red',
+                 fill=True, fill_color='red',  fill_opacity=0.6)),
+        (cycle_df, '_jlat', '_jlon', folium.Marker(icon=_CYCLIST_ICON)),
         (crash_coords[fatal_ped_mask], 'latitude', 'longitude', folium.Marker(icon=_FATAL_PED_ICON)),
     ]
     for subset, lat_col, lon_col, marker in layers:
@@ -244,14 +255,15 @@ def _make_crash_layers(df, map_obj):
         folium.GeoJson(geojson, marker=marker).add_to(map_obj)
 
 
-def plot_points(lat_0: float, lon_0: float, label: str, crash_df):
+def plot_points(lat_0: float, lon_0: float, label: str, crash_df, show_marker: bool = True):
     """Build the two Folium maps and return (zoomed_map, city_map, crash_count)."""
     zone_df = crashes_near_point(lat_0, lon_0, crash_df)
     zone_df = zone_df[zone_df['crash_year'].between(START_YEAR, END_YEAR)]
     crash_count = len(zone_df)
 
     m = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=18, max_zoom=MAX_ZOOM)
-    m.add_child(folium.Marker(location=[lat_0, lon_0], popup=label, icon=folium.Icon(color='blue')))
+    if show_marker:
+        m.add_child(folium.Marker(location=[lat_0, lon_0], popup=label, icon=folium.Icon(color='blue')))
     folium.Circle(
         location=[lat_0, lon_0],
         radius=SEARCH_RADIUS / FEET_TO_METERS,
@@ -261,7 +273,8 @@ def plot_points(lat_0: float, lon_0: float, label: str, crash_df):
 
     crashes_end_year_df = crash_df[crash_df['crash_year'] == END_YEAR]
     map_year = folium.Map(location=[lat_0, lon_0], tiles="OpenStreetMap", zoom_start=15, max_zoom=MAX_ZOOM)
-    map_year.add_child(folium.Marker(location=[lat_0, lon_0], popup=label, icon=folium.Icon(color='blue')))
+    if show_marker:
+        map_year.add_child(folium.Marker(location=[lat_0, lon_0], popup=label, icon=folium.Icon(color='blue')))
     _make_crash_layers(crashes_end_year_df, map_year)
 
     return m, map_year, crash_count

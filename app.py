@@ -55,7 +55,8 @@ else:  # Point of Interest
 ########## END SIDE BAR - INPUT MODE #############
 
 crash_df = map_plot.load_data()
-m, map_year, score = map_plot.plot_points(lat_0, lon_0, label, crash_df)
+m, map_year, score = map_plot.plot_points(lat_0, lon_0, label, crash_df,
+                                          show_marker=(mode != "Intersection"))
 
 ##########  MAP ########## 
 
@@ -63,9 +64,9 @@ _start = map_plot.START_YEAR
 _end   = map_plot.END_YEAR
 _year_range = str(_start) if _start == _end else f"{_start}–{_end}"
 
-st.subheader("Malden location with nearby car crashes")
+st.subheader(f"Malden location with nearby car crashes {_year_range}")
 st.write(f"⬅️ In the sidebar, input an address or choose a point of interest to visualize the number of \
-nearby car crashes for {_year_range} (red number).")
+nearby car crashes for (red number).")
 
 st.markdown("""
 <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;
@@ -77,7 +78,7 @@ st.markdown("""
     <circle cx="6" cy="6" r="5" fill="red"/>
   </svg>&nbsp;Crash with pedestrian</span>
   <span><svg width="13" height="13" viewBox="0 0 13 13">
-    <polygon points="6,1 12,12 1,12" fill="orange" stroke="saddlebrown" stroke-width="1"/>
+    <polygon points="6,1 12,12 1,12" fill="orange" stroke="sienna" stroke-width="1"/>
   </svg>&nbsp;Crash with cyclist</span>
   <span><svg width="22" height="22" viewBox="0 0 22 22">
     <circle cx="11" cy="11" r="10" fill="none" stroke="red" stroke-width="2"/>
