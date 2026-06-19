@@ -14,6 +14,7 @@ bottom of this file and change lat, lon, title, and optionally radius_ft and
 the before/after year tuples.
 """
 
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -66,7 +67,8 @@ def plot_vuln_heatmap(df, zoom=14, radius=15, blur=10):
 
 def plot_before_after(df, lat, lon, radius_ft=500,
                       before=(2018, 2020), after=(2021, 2023),
-                      title='Before / After', figsize=(16, 8)):
+                      title='Before / After', figsize=(16, 8),
+                      malden_roads=None):
     """
     Side-by-side scatter maps of crashes near one intersection for two periods.
 
@@ -87,15 +89,17 @@ def plot_before_after(df, lat, lon, radius_ft=500,
     before    : (start_year, end_year) inclusive for the "before" panel
     after     : (start_year, end_year) inclusive for the "after" panel
     title     : figure suptitle
-    figsize   : matplotlib figure size
+    figsize      : matplotlib figure size
+    malden_roads : optional GeoDataFrame from load_malden_roads() — draws road
+                   network as a gray background behind the crash points
 
     Example
     -------
     # Highland Ave & Fellsway — traffic signal installed ~2021
     fig, axes = plot_before_after(
-        crash_df, lat=42.428, lon=-71.090,
+        crash_df, lat=42.434186, lon=-71.083543,
         before=(2018, 2020), after=(2021, 2023),
-        title='Highland Ave & Fellsway W'
+        title='Highland Ave & Fellsway (signal installed ~2021)'
     )
 
     # Malden City Hall / Pleasant St & Commercial St
@@ -109,6 +113,7 @@ def plot_before_after(df, lat, lon, radius_ft=500,
 
     d_lat = radius_ft / _FT_PER_DEG_LAT
     d_lon = radius_ft / _FT_PER_DEG_LON
+    pad   = 0.15  # fraction of radius added as margin around the view window
 
     nearby = df[
         df['latitude'].between(lat - d_lat, lat + d_lat) &
@@ -117,12 +122,26 @@ def plot_before_after(df, lat, lon, radius_ft=500,
     before_df = nearby[nearby['crash_year'].between(*before)]
     after_df  = nearby[nearby['crash_year'].between(*after)]
 
+    # Pre-process roads once: reproject to WGS84 and clip to the view window
+    roads_wgs84 = None
+    if malden_roads is not None:
+        from shapely.geometry import box as shapely_box
+        view = shapely_box(
+            lon - d_lon * (1 + pad), lat - d_lat * (1 + pad),
+            lon + d_lon * (1 + pad), lat + d_lat * (1 + pad),
+        )
+        roads_wgs84 = malden_roads.to_crs('EPSG:4326').clip(view)
+
     fig, axes = plt.subplots(1, 2, figsize=figsize)
 
     for ax, period_df, label in [
         (axes[0], before_df, f'{before[0]}–{before[1]}'),
         (axes[1], after_df,  f'{after[0]}–{after[1]}'),
     ]:
+        # Road background (drawn first so crash points sit on top)
+        if roads_wgs84 is not None and not roads_wgs84.empty:
+            roads_wgs84.plot(ax=ax, color='lightgray', linewidth=2, alpha=1, zorder=1)
+
         ped_mask       = is_ped_crash(period_df)
         fatal_ped_mask = is_fatal_ped_crash(period_df)
         cycle_mask     = is_cycle_crash(period_df) & ~ped_mask
@@ -146,18 +165,19 @@ def plot_before_after(df, lat, lon, radius_ft=500,
                    linewidths=2.5, zorder=5, label='Intersection')
         rect = plt.Rectangle(
             (lon - d_lon, lat - d_lat), 2 * d_lon, 2 * d_lat,
-            linewidth=1, edgecolor='gray', linestyle='--', facecolor='none'
+            linewidth=1, edgecolor='gray', linestyle='--', facecolor='none', zorder=4
         )
         ax.add_patch(rect)
 
-        pad = 0.1
         ax.set_xlim(lon - d_lon * (1 + pad), lon + d_lon * (1 + pad))
         ax.set_ylim(lat - d_lat * (1 + pad), lat + d_lat * (1 + pad))
+        # Correct aspect ratio for lat/lon at this latitude so roads look true-to-map
+        ax.set_aspect(1 / np.cos(np.radians(lat)))
         ax.set_title(f'{label}  (n={len(period_df)})', fontsize=13)
         ax.set_xlabel('Longitude')
         ax.set_ylabel('Latitude')
         ax.legend(loc='upper right', fontsize=9)
-        ax.grid(True, alpha=0.3)
+        ax.grid(True, alpha=0.2)
 
     fig.suptitle(title, fontsize=15, fontweight='bold')
     plt.tight_layout()
@@ -306,13 +326,20 @@ def plot_categorical_bubbles(df, lat_col='Latitude', lon_col='Longitude', size_m
 
 if __name__ == '__main__':
     from pathlib import Path
-    from src.load_data import load_crashes_from_db
+    from src.load_data import load_crashes_from_db, load_malden_roads
 
     out = Path('output')
     out.mkdir(exist_ok=True)
 
     print("Loading crash data from database...")
     crash_df = load_crashes_from_db(malden_only=True)
+
+    print("Loading road network...")
+    try:
+        roads = load_malden_roads()
+    except Exception as e:
+        print(f"  Could not load roads ({e}) — plots will have no road background.")
+        roads = None
 
     # ── Citywide heatmap ──────────────────────────────────────────────────────
     print("Generating vulnerable-user heatmap...")
@@ -329,8 +356,15 @@ if __name__ == '__main__':
 
     intersections = [
         dict(
-            lat=42.428, lon=-71.090,
-            title='Highland Ave & Fellsway W',
+            lat=42.434186, lon=-71.083543,
+            title='Highland Ave & Fellsway (signal installed ~2021)',
+            radius_ft=500,
+            before=(2018, 2020),
+            after=(2021, 2023),
+        ),
+        dict(
+            lat=42.437954, lon=-71.082836,
+            title='East Border Rd & Fellsway (expected increase after 2021)',
             radius_ft=500,
             before=(2018, 2020),
             after=(2021, 2023),
@@ -349,11 +383,39 @@ if __name__ == '__main__':
             before=(2018, 2020),
             after=(2021, 2023),
         ),
+        dict(
+            lat=42.4253, lon=-71.0679,
+            title='Main St & Centre St',
+            radius_ft=300,
+            before=(2018, 2020),
+            after=(2021, 2023),
+        ),
+        dict(
+            lat=42.4248, lon=-71.0416,
+            title='Broadway at MA-60 (increase after 2021)',
+            radius_ft=400,
+            before=(2018, 2020),
+            after=(2021, 2023),
+        ),
+        dict(
+            lat=42.4183, lon=-71.0762,
+            title='Commercial St & Canal St (City Hall corridor)',
+            radius_ft=400,
+            before=(2018, 2020),
+            after=(2021, 2023),
+        ),
+        dict(
+            lat=42.4340, lon=-71.0460,
+            title='Lebanon St (sharp drop after 2021)',
+            radius_ft=400,
+            before=(2018, 2020),
+            after=(2021, 2023),
+        ),
     ]
 
     for spec in intersections:
         print(f"Generating before/after: {spec['title']}...")
-        fig, _ = plot_before_after(crash_df, **spec)
+        fig, _ = plot_before_after(crash_df, **spec, malden_roads=roads)
         slug = spec['title'].replace(' ', '_').replace('/', '-').replace('&', 'and')
         path = out / f'before_after_{slug}.png'
         fig.savefig(path, dpi=150, bbox_inches='tight')
