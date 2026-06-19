@@ -44,25 +44,29 @@ MAX_ZOOM = 19
 SCHOOL_RADIUS = 300  # feet — wider search area around school buildings
 
 malden_places = {
-    # Dangerous Intersections — geocoded via Geocodio
-    'Centre St & Main St':        {'type': 'intersection', 'street1': 'Centre St',    'street2': 'Main St'},
-    'Main St & Salem St':         {'type': 'intersection', 'street1': 'Main St',      'street2': 'Salem St'},
-    'Centre St & Charles St':     {'type': 'intersection', 'street1': 'Centre St',    'street2': 'Charles St'},
+    # Dangerous Intersections — hardcoded coordinates
+    'Centre St & Main St':        {'type': 'intersection', 'street1': 'Centre St', 'street2': 'Main St'},
+    'Main St & Salem St':         {'type': 'intersection', 'street1': 'Main St', 'street2': 'Salem St'},
     # Schools — wider search radius
-    'Malden High School':         {'type': 'address', 'address': '77 Salem St',       'radius': SCHOOL_RADIUS},
-    'Beebe School':               {'type': 'address', 'address': '401 Pleasant St',   'radius': SCHOOL_RADIUS},
-    'Ferryway School':            {'type': 'address', 'address': '150 Cross St',      'radius': SCHOOL_RADIUS},
-    'Salemwood School':           {'type': 'address', 'address': '529 Salem St',      'radius': SCHOOL_RADIUS},
-    'Linden STEAM Academy':       {'type': 'address', 'address': '29 Wescott St',     'radius': SCHOOL_RADIUS},
-    'Forestdale School':          {'type': 'address', 'address': '74 Sylvan St',      'radius': SCHOOL_RADIUS},
+    'Malden High School':         {'type': 'address', 'address': '77 Salem St',       'radius': 400},
     'Early Learning Center':      {'type': 'address', 'address': '257 Mountain Ave',  'radius': SCHOOL_RADIUS},
-    # Other Points of Intersest
+    'Beebe School':               {'type': 'address', 'address': '401 Pleasant St',   'radius': 300},
+    'Ferryway School':            {'type': 'address', 'address': '150 Cross St',      'radius': SCHOOL_RADIUS},
+    'Salemwood School':           {'type': 'latlon', 'lat': 42.431260, 'lon': -71.050181, 'radius': SCHOOL_RADIUS},
+    'Linden STEAM Academy':       {'type': 'latlon', 'lat': 42.433901, 'lon': -71.034218, 'radius': 300},
+    'Forestdale School':          {'type': 'address', 'address': '74 Sylvan St',      'radius': SCHOOL_RADIUS},
+    # Other Points of Interest
     'Malden Center T Station':    {'type': 'address', 'address': '30 Commercial St'},
-    'MA 99 at Broadway Plaza':    {'type': 'address', 'address': '62 Broadway'},
-    'Immigrant Learning Center':  {'type': 'address', 'address': '442 Main Street'},
-    'Malden City Hall':           {'type': 'address', 'address': '215 Pleasant St'},
     'Oak Grove Station':          {'type': 'address', 'address': '287 Washington St'},
 }
+
+"""
+'Centre St & Main St':        {'type': 'latlon', 'lat': 42.4251338, 'lon': -71.0671482},
+'Main St & Salem St':         {'type': 'latlon', 'lat': 42.4274622, 'lon': -71.0668908},
+'Centre St & Charles St':     {'type': 'latlon', 'lat': 42.425338,  'lon': -71.068289},
+'MA 99 at Broadway Plaza':    {'type': 'address', 'address': '62 Broadway'},
+'Centre St & Charles St':     {'type': 'intersection', 'street1': 'Centre St', 'street2': 'Charles St'},
+"""
 
 
 @st.cache_data
@@ -120,7 +124,7 @@ def geocode_intersection(street1: str, street2: str) -> tuple:
 
     Returns (lat, lon, label). Raises ValueError if not found.
     """
-    from pygeocodio import GeocodioClient
+    from geocodio import GeocodioClient
     key = _get_geocodio_key()
     client = GeocodioClient(key)
     label = f"{street1.strip()} & {street2.strip()}"

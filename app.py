@@ -50,7 +50,9 @@ else:  # Point of Interest
     poi = places_dict[location]
     poi_radius = poi.get('radius', None)
     try:
-        if poi['type'] == 'intersection':
+        if poi['type'] == 'latlon':
+            lat_0, lon_0, label = poi['lat'], poi['lon'], location
+        elif poi['type'] == 'intersection':
             lat_0, lon_0, label = map_plot.geocode_intersection(poi['street1'], poi['street2'])
         else:
             lat_0, lon_0, label = map_plot.geocode_address(poi['address'])
