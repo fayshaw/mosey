@@ -120,6 +120,13 @@ def parse_street_segment(segment):
             result['begin'] = _correct_street_name(begin)
             result['end']   = _correct_street_name(end)
             result['is_complete'] = True
+    elif len(parts) >= 3:
+        # "Highland Ave, Devir St, Pearl St" — three comma-separated streets, no "to"
+        begin, end = parts[1].strip(), parts[2].strip()
+        if not re.search(r'\d', begin) and not re.search(r'\d', end):
+            result['begin'] = _correct_street_name(begin)
+            result['end']   = _correct_street_name(end)
+            result['is_complete'] = True
 
     return result
 
@@ -136,13 +143,16 @@ def parse_all_segments(walk_df):
 
 def build_intersection_strings(parsed_df):
     """
-    For complete rows (is_complete == True), produce two geocodable intersection
-    strings per audit row — one at the begin cross street and one at the end.
+    Produce two rows per audit row — one for the begin cross street and one for
+    the end — with a geocodable 'intersection' string.  Rows that could not be
+    fully parsed (is_complete == False) are included with intersection=None so
+    they appear in the output CSV for manual lat/lon entry.
 
     Returns a single DataFrame (begin rows first, end rows second) with an
     'intersection' column and an 'endpoint' column ('begin' or 'end').
     """
-    complete = parsed_df[parsed_df['is_complete']].copy()
+    complete   = parsed_df[parsed_df['is_complete']].copy()
+    incomplete = parsed_df[~parsed_df['is_complete']].copy()
 
     begin = complete.copy()
     begin['intersection'] = begin['along'] + " & " + begin['begin'] + ", Malden, MA"
@@ -152,7 +162,15 @@ def build_intersection_strings(parsed_df):
     end['intersection'] = end['along'] + " & " + end['end'] + ", Malden, MA"
     end['endpoint'] = 'end'
 
-    return pd.concat([begin, end], axis=0).reset_index(drop=True)
+    inc_begin = incomplete.copy()
+    inc_begin['intersection'] = None
+    inc_begin['endpoint'] = 'begin'
+
+    inc_end = incomplete.copy()
+    inc_end['intersection'] = None
+    inc_end['endpoint'] = 'end'
+
+    return pd.concat([begin, inc_begin, end, inc_end], axis=0).reset_index(drop=True)
 
 
 def geocode_intersections(intersections_df, api_key=None):
@@ -171,8 +189,11 @@ def geocode_intersections(intersections_df, api_key=None):
     print(f"Geocoding {len(intersections_df)} intersections via Geocodio...")
     results = []
     for _, row in intersections_df.iterrows():
-        results.append(geocodio_geocode(row['intersection'], client))
-        time.sleep(0.2)  # stay within Geocodio's rate limit
+        if pd.isnull(row['intersection']):
+            results.append(pd.Series({'lat': None, 'lon': None, 'geocoding_status': 'needs_manual'}))
+        else:
+            results.append(geocodio_geocode(row['intersection'], client))
+            time.sleep(0.2)  # stay within Geocodio's rate limit
 
     geocoded = pd.DataFrame(results)
     return pd.concat([intersections_df.reset_index(drop=True), geocoded], axis=1)

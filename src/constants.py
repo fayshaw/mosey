@@ -6,12 +6,16 @@ OUT_DIR = ROOT / 'output'
 DATA_DIR = ROOT / 'data_sources'
 
 # File paths
-CRASH_FILE         = DATA_DIR / "Malden_crashesJan2015-1Dec2025.csv"
-WALK_AUDIT_FILE    = DATA_DIR / "Walk Audit Responses.xlsx"
-TOWN_SURVEY_SHP    = ROOT / "GIS/townssurvey_shp/TOWNSSURVEY_POLY.shp"
-ROADS_SHP          = ROOT / "GIS/statewide_viewer_SHP/gisdata/men1/infrastructure/EOTROADS_ARC.shp"
-ROAD_NETWORK_CACHE = ROOT / "GIS/malden_road_network.graphml"
-DB_PATH            = ROOT / "db/crashes.db"
+CRASH_FILE             = DATA_DIR / "Malden_crashesJan2015-1Dec2025.csv"
+WALK_AUDIT_FILE        = DATA_DIR / "Walk_Audit_Responses_2026-06-19.xlsx"
+TOWN_SURVEY_SHP        = ROOT / "GIS/townssurvey_shp/TOWNSSURVEY_POLY.shp"
+ROADS_SHP              = ROOT / "GIS/statewide_viewer_SHP/gisdata/men1/infrastructure/EOTROADS_ARC.shp"
+ROAD_NETWORK_CACHE     = ROOT / "GIS/malden_road_network.graphml"
+DB_PATH                = ROOT / "db/crashes.db"
+WALK_AUDIT_GEO         = ROOT / "data_sources/walk_audit_geocoded.csv"
+WALK_AUDIT_GEO_FIX     = ROOT / "data_sources/walk_audit_geocoded_fixed_audit.csv"
+WALK_AUDIT_WARD_COUNTS = ROOT / "output/ward_counts.png"
+WALK_AUDIT_MAP         = OUT_DIR / "walk_audit_map.png"
 
 # MassDOT CSV column names → database column names
 COLUMN_MAP = {
@@ -110,7 +114,7 @@ WALK_AUDIT_NAME_Q      = "If you would like to be contacted for follow ups, plea
 WALK_AUDIT_WARD_Q      = "What Ward are you Walking in? (Optional)"
 WALK_AUDIT_SECTION_Q   = "Which Section of the Walk Audit are you Completing?"
 WALK_AUDIT_SECTION_VAL = "Sidewalks, Streets and Crossings (WALKING AUDIT)"
-WALK_AUDIT_STREET_Q    = "Which street are you auditing? Please indicate starting and ending locations."
+WALK_AUDIT_STREET_Q    = "Which street are you auditing? Please indicate starting and ending locations. \nEx. Pleasant St. from Commercial to Main"
 WALK_AUDIT_OVERALL_Q   = "Walkability of the area, based on the findings above:  "
 
 SEARCH_RADIUS = 150  # feet radius for nearby-crash queries
@@ -131,10 +135,3 @@ malden_places = {
     'MA 99 at Broadway Plaza '     : '62 Broadway, Malden, MA 02148',
     'Fellsway & Salem'             : '104 Fellsway W, Medford, MA 02155'
 }
-"""
-intersections = {
-    'Centre St & Main St'          : [42.42535347779158, -71.06777785578645],
-    'Malden Center T Station'      : [442.42656324305639, -71.07355212589563],
-    'Commercial St & Charles St'   : [42.423278644928516, -71.07480992904118],
-    }
-"""
