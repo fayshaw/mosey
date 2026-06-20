@@ -198,11 +198,12 @@ def plot_combined_crashes_subplots_bar(counts_df, out_dir):
 
 
 def plot_audit_ward_counts(ward_counts, plt_path=OUT_DIR / 'ward_counts.png'):
+    labels = [label.encode('ascii', 'ignore').decode().strip() for label in ward_counts.index]
     plt.figure(figsize=(10, 6))
-    plt.bar(ward_counts.index, ward_counts.values)
+    plt.bar(labels, ward_counts.values)
     plt.xlabel('Ward')
     plt.ylabel('Count')
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=45, ha='right')
     plt.title('Walk Audit Ward Counts')
     plt.tight_layout()
     plt.savefig(plt_path)

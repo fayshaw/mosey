@@ -10,10 +10,11 @@ Outputs:
 import pandas as pd
 from dotenv import load_dotenv
 
-from src.constants import (OUT_DIR, WALK_AUDIT_FILE, WALK_AUDIT_OVERALL_Q, WALK_AUDIT_WARD_Q, \
-                           WALK_AUDIT_GEO, WALK_AUDIT_GEO_FIX, WALK_AUDIT_WARD_COUNTS, WALK_AUDIT_MAP)
+from src.constants import (WALK_AUDIT_FILE, WALK_AUDIT_OVERALL_Q, WALK_AUDIT_WARD_Q,
+                           WALK_AUDIT_GEO, WALK_AUDIT_GEO_FIX, WALK_AUDIT_WARD_COUNTS,
+                           WALK_AUDIT_MAP, WALK_AUDIT_MAP_OSM)
 from src.load_data import load_malden_boundary, load_malden_roads, load_walk_audit_excel
-from src.plot_spatial import plot_walk_audit_map
+from src.plot_spatial import plot_walk_audit_map, plot_walk_audit_map_osm
 from src.spatial_utils import get_malden_road_network
 from src.walk_audit import (
     add_rating_colors,
@@ -26,7 +27,7 @@ from src.walk_audit import (
 from src.plot_counts import plot_audit_ward_counts
 
 load_dotenv()
-
+"""
 raw_df      = load_walk_audit_excel(WALK_AUDIT_FILE)
 print(f"Loaded raw data: {raw_df.shape}")
 
@@ -45,18 +46,14 @@ success     = (geocoded_df['geocoding_status'] == 'success').sum()
 print(f"Geocoded: {success}/{len(geocoded_df)} successful")
 
 geocoded_df = add_rating_colors(geocoded_df, rating_col=WALK_AUDIT_OVERALL_Q)
-out_path = OUT_DIR / WALK_AUDIT_GEO
-geocoded_df.to_csv(out_path, index=False)
-print(f"Saved {out_path} ({len(geocoded_df)} rows)")
+"""
 
-fixed_path = OUT_DIR / WALK_AUDIT_GEO_FIX
-map_input  = fixed_path if fixed_path.exists() else out_path
+map_input = WALK_AUDIT_GEO_FIX if WALK_AUDIT_GEO_FIX.exists() else WALK_AUDIT_GEO
 print(f"Using {map_input} for mapping")
 geocoded_df = pd.read_csv(map_input)
 
 ward_counts = geocoded_df[WALK_AUDIT_WARD_Q].value_counts()
-ward_counts_path = OUT_DIR / WALK_AUDIT_WARD_COUNTS
-plot_audit_ward_counts(ward_counts, plt_path=ward_counts_path)
+plot_audit_ward_counts(ward_counts, plt_path=WALK_AUDIT_WARD_COUNTS)
 
 malden_gdf   = load_malden_boundary()
 malden_roads = load_malden_roads()
@@ -64,8 +61,6 @@ malden_roads = load_malden_roads()
 G = get_malden_road_network()
 gdf_all, gdf_lines = build_route_geodataframes(geocoded_df, G, malden_boundary=malden_gdf)
 print(f"Route GeoDataFrames: {len(gdf_all)} points, {len(gdf_lines)} segments")
-map_path = OUT_DIR / WALK_AUDIT_MAP
-plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads, save_path=map_path)
-print(f"Saved {map_path}")
-
+plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads, save_path=WALK_AUDIT_MAP)
+plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf, save_path=WALK_AUDIT_MAP_OSM)
 

@@ -16,6 +16,7 @@ WALK_AUDIT_GEO         = ROOT / "data_sources/walk_audit_geocoded.csv"
 WALK_AUDIT_GEO_FIX     = ROOT / "data_sources/walk_audit_geocoded_fixed_audit.csv"
 WALK_AUDIT_WARD_COUNTS = ROOT / "output/ward_counts.png"
 WALK_AUDIT_MAP         = OUT_DIR / "walk_audit_map.png"
+WALK_AUDIT_MAP_OSM     = OUT_DIR / "walk_audit_map_osm.png"
 
 # MassDOT CSV column names → database column names
 COLUMN_MAP = {

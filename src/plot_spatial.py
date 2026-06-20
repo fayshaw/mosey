@@ -143,3 +143,87 @@ def plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads,
         plt.savefig(save_path, dpi=dpi, bbox_inches='tight', facecolor='white')
         print(f"Saved {save_path}")
     return fig, ax
+
+
+def plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf,
+                             save_path=None, figsize=(20, 16), dpi=150,
+                             tile_source=None):
+    """
+    Walk audit map with an OpenStreetMap tile basemap.
+
+    Reprojects all layers to Web Mercator (EPSG:3857) for contextily, then
+    overlays the Malden boundary outline, colored audit route lines, and
+    intersection rating points.
+
+    Parameters
+    ----------
+    gdf_all     : GeoDataFrame of intersection points
+    gdf_lines   : GeoDataFrame of road-network route lines
+    malden_gdf  : GeoDataFrame of Malden boundary
+    save_path   : optional path to save the figure (PNG)
+    figsize     : figure size tuple
+    dpi         : resolution (lower than static map — tiles add their own detail)
+    tile_source : contextily tile provider; defaults to CartoDB Positron
+    """
+    import math
+    import contextily as ctx
+    import pandas as pd
+    from src.constants import RATING_COLOR, WALK_AUDIT_OVERALL_Q
+
+    WEB_MERCATOR = "EPSG:3857"
+
+    gdf_all_wm   = gdf_all.to_crs(WEB_MERCATOR)
+    gdf_lines_wm = gdf_lines.to_crs(WEB_MERCATOR)
+    malden_wm    = malden_gdf.to_crs(WEB_MERCATOR)
+
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+
+    malden_wm.plot(ax=ax, facecolor='none', edgecolor='black', linewidth=1.5)
+
+    for rating, color in RATING_COLOR.items():
+        subset = gdf_lines_wm[gdf_lines_wm[WALK_AUDIT_OVERALL_Q] == rating]
+        if not subset.empty:
+            subset.plot(ax=ax, color=color, linewidth=5, alpha=0.8)
+
+    for rating, color in RATING_COLOR.items():
+        subset = gdf_all_wm[gdf_all_wm[WALK_AUDIT_OVERALL_Q] == rating]
+        if not subset.empty:
+            subset.plot(ax=ax, color=color, markersize=35, alpha=0.9, label=rating)
+
+    street_labels = {}
+    for _, row in gdf_lines_wm.iterrows():
+        street = row.get('along')
+        if pd.notnull(street) and street not in street_labels:
+            midpoint = row['geometry'].interpolate(0.5, normalized=True)
+            street_labels[street] = (midpoint, row['geometry'])
+
+    offset_pct = 0.02
+    for street, (point, geom) in street_labels.items():
+        p1 = geom.interpolate(0.49, normalized=True)
+        p2 = geom.interpolate(0.51, normalized=True)
+        angle      = math.degrees(math.atan2(p2.y - p1.y, p2.x - p1.x))
+        angle_norm = angle % 180
+
+        if 45 < angle_norm < 135:
+            label_x, label_y = point.x, point.y
+        else:
+            v_offset = -((ax.get_ylim()[1] - ax.get_ylim()[0]) * offset_pct)
+            label_x  = point.x
+            label_y  = point.y + v_offset
+
+        ax.text(label_x, label_y, street.title(),
+                fontsize=9, ha='center', va='center', fontweight='bold',
+                bbox=dict(boxstyle='round,pad=0.5', facecolor='lightyellow',
+                          edgecolor='black', alpha=0.85, linewidth=1))
+
+    source = tile_source or ctx.providers.CartoDB.Positron
+    ctx.add_basemap(ax, source=source)
+
+    ax.set_axis_off()
+    ax.set_title('Walk Audit Ratings in Malden', fontsize=16, pad=12)
+    ax.legend(title='Rating', fontsize=12, loc='upper right')
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=dpi, bbox_inches='tight', facecolor='white')
+        print(f"Saved {save_path}")
+    return fig, ax
