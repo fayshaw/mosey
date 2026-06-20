@@ -16,7 +16,7 @@ st.write("The project is an examination of walkability with respect to pedestria
 It shows car crash data in Malden, MA, a city north of Boston with a population of 66,000. ")
 
 ########## SIDE BAR - INPUT MODE #############
-mode = st.sidebar.radio("Find a location by:", ["Address", "Intersection", "Point of Interest"])
+mode = st.sidebar.radio("Find a location by:", ["Point of Interest", "Intersection", "Address"])
 poi_radius = None
 
 if mode == "Address":
@@ -73,9 +73,10 @@ _start = map_plot.START_YEAR
 _end   = map_plot.END_YEAR
 _year_range = str(_start) if _start == _end else f"{_start}–{_end}"
 
-st.subheader("Malden location with nearby car crashes")
-st.write(f"⬅️ In the sidebar, input an address or choose a point of interest to visualize the number of \
-nearby car crashes for {_year_range} (red number).")
+st.subheader(f"Malden location with nearby car crashes for {_year_range}")
+st.write(f"⬅️ In the sidebar, choose a point of interest, input an address or intersection \
+         to visualize the number of nearby car crashes for {_year_range} (red number). \
+         For comparison, the Walk Score is shown for the same location (blue number).")
 
 st.markdown("""
 <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;

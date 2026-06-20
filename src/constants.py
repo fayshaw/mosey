@@ -113,7 +113,8 @@ WALK_AUDIT_SECTION_VAL = "Sidewalks, Streets and Crossings (WALKING AUDIT)"
 WALK_AUDIT_STREET_Q    = "Which street are you auditing? Please indicate starting and ending locations."
 WALK_AUDIT_OVERALL_Q   = "Walkability of the area, based on the findings above:  "
 
-SEARCH_RADIUS = 200  # feet radius for nearby-crash queries
+SEARCH_RADIUS = 150  # feet radius for nearby-crash queries
+SCHOOL_RADIUS = 300  # feet — wider search area around school buildings to take into account multiple intersections
 
 malden_places = {
     'Immigrant Learning Center'    : '442 Main Street Malden MA 02148',
@@ -130,9 +131,10 @@ malden_places = {
     'MA 99 at Broadway Plaza '     : '62 Broadway, Malden, MA 02148',
     'Fellsway & Salem'             : '104 Fellsway W, Medford, MA 02155'
 }
-
+"""
 intersections = {
     'Centre St & Main St'          : [42.42535347779158, -71.06777785578645],
     'Malden Center T Station'      : [442.42656324305639, -71.07355212589563],
     'Commercial St & Charles St'   : [42.423278644928516, -71.07480992904118],
     }
+"""

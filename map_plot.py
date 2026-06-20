@@ -32,7 +32,7 @@ import re
 import streamlit as st
 from dotenv import load_dotenv
 from src.spatial_utils import crashes_near_point
-from src.constants import SEARCH_RADIUS
+from src.constants import SEARCH_RADIUS, SCHOOL_RADIUS
 from src.crash_utils import is_ped_crash, is_cycle_crash, is_fatal_ped_crash
 from src.load_data import load_crashes_from_db
 
@@ -41,33 +41,23 @@ END_YEAR = 2025
 FEET_TO_METERS = 3.281
 JITTER = 0.00003  # JITTER = 0.00003 is ~3 metres (~1 lane width) — separates stacked dots without leaving the road
 MAX_ZOOM = 19
-SCHOOL_RADIUS = 300  # feet — wider search area around school buildings
 
 malden_places = {
     # Dangerous Intersections — hardcoded coordinates
     'Centre St & Main St':        {'type': 'intersection', 'street1': 'Centre St', 'street2': 'Main St'},
     'Main St & Salem St':         {'type': 'intersection', 'street1': 'Main St', 'street2': 'Salem St'},
     # Schools — wider search radius
-    'Malden High School':         {'type': 'address', 'address': '77 Salem St',       'radius': 400},
+    'Malden High School':         {'type': 'address', 'address': '77 Salem St',       'radius': SCHOOL_RADIUS+100},
     'Early Learning Center':      {'type': 'address', 'address': '257 Mountain Ave',  'radius': SCHOOL_RADIUS},
-    'Beebe School':               {'type': 'address', 'address': '401 Pleasant St',   'radius': 300},
-    'Ferryway School':            {'type': 'address', 'address': '150 Cross St',      'radius': SCHOOL_RADIUS},
+    'Beebe School':               {'type': 'address', 'address': '401 Pleasant St',   'radius': SCHOOL_RADIUS},
+    'Ferryway School':            {'type': 'address', 'address': '150 Cross St',      'radius': SCHOOL_RADIUS+50},
     'Salemwood School':           {'type': 'latlon', 'lat': 42.431260, 'lon': -71.050181, 'radius': SCHOOL_RADIUS},
-    'Linden STEAM Academy':       {'type': 'latlon', 'lat': 42.433901, 'lon': -71.034218, 'radius': 300},
+    'Linden STEAM Academy':       {'type': 'latlon', 'lat': 42.433901, 'lon': -71.034218, 'radius': SCHOOL_RADIUS},
     'Forestdale School':          {'type': 'address', 'address': '74 Sylvan St',      'radius': SCHOOL_RADIUS},
     # Other Points of Interest
-    'Malden Center T Station':    {'type': 'address', 'address': '30 Commercial St'},
-    'Oak Grove Station':          {'type': 'address', 'address': '287 Washington St'},
+    'Malden Center T Station':    {'type': 'intersection', 'street1': 'Commercial St', 'street2': 'Exchange St'},
+#    'Oak Grove Station':          {'type': 'address', 'address': '287 Washington St'},
 }
-
-"""
-'Centre St & Main St':        {'type': 'latlon', 'lat': 42.4251338, 'lon': -71.0671482},
-'Main St & Salem St':         {'type': 'latlon', 'lat': 42.4274622, 'lon': -71.0668908},
-'Centre St & Charles St':     {'type': 'latlon', 'lat': 42.425338,  'lon': -71.068289},
-'MA 99 at Broadway Plaza':    {'type': 'address', 'address': '62 Broadway'},
-'Centre St & Charles St':     {'type': 'intersection', 'street1': 'Centre St', 'street2': 'Charles St'},
-"""
-
 
 @st.cache_data
 def load_data():
