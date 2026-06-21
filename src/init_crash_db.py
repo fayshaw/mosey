@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.constants import DB_PATH, CRASH_FILE
+from src.constants import CRASH_DB, CRASH_FILE
 from src.load_data import ingest_csv_to_db
 
 CREATE_CRASH_REPORTS = """
@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS Crashes (
 """
 
 
-def create_schema(db_path=DB_PATH):
+def create_schema(db_path=CRASH_DB):
     """Drop the old Crashes table and recreate it. Does not touch CrashReports."""
     conn = sqlite3.connect(db_path)
     conn.execute("DROP TABLE IF EXISTS Crashes")
@@ -96,7 +96,7 @@ def create_schema(db_path=DB_PATH):
     print(f"Schema created: {db_path}")
 
 
-def add_crash_reports_table(db_path=DB_PATH):
+def add_crash_reports_table(db_path=CRASH_DB):
     """
     Create the CrashReports table if it doesn't exist.
     Safe to run on a database that already has the table — does nothing in that case.
@@ -108,7 +108,7 @@ def add_crash_reports_table(db_path=DB_PATH):
     print("CrashReports table ready.")
 
 
-def add_malden_column(db_path=DB_PATH):
+def add_malden_column(db_path=CRASH_DB):
     """
     Add the in_malden column to an existing Crashes table.
     Safe to call on a table that already has the column — does nothing in that case.
@@ -126,7 +126,7 @@ def add_malden_column(db_path=DB_PATH):
     conn.close()
 
 
-def add_columns_migration(csv_path=CRASH_FILE, db_path=DB_PATH):
+def add_columns_migration(csv_path=CRASH_FILE, db_path=CRASH_DB):
     """
     Add first_harmful_event_location and vehicle_sequence_events to an existing
     Crashes table, then back-fill values from the source CSV.

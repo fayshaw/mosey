@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.constants import ROAD_NETWORK_CACHE, SEARCH_RADIUS
+from src.constants import ROAD_NETWORK, SEARCH_RADIUS
 
 
 def get_malden_road_network(cache_path=None):
@@ -14,7 +14,7 @@ def get_malden_road_network(cache_path=None):
     Saves to disk on first download; subsequent calls load from the cache file.
     """
     import osmnx as ox
-    path = Path(cache_path or ROAD_NETWORK_CACHE)
+    path = Path(cache_path or ROAD_NETWORK)
     if path.exists():
         return ox.load_graphml(path)
     print("Downloading Malden road network from OpenStreetMap...")

@@ -11,11 +11,11 @@ from src.constants import (
     CRS_WGS84,
     MALDEN_STREET_CORRECTIONS,
     RATING_COLOR,
-    WALK_AUDIT_NAME_Q,
-    WALK_AUDIT_OVERALL_Q,
-    WALK_AUDIT_SECTION_Q,
-    WALK_AUDIT_SECTION_VAL,
-    WALK_AUDIT_STREET_Q,
+    AUDIT_NAME_Q,
+    AUDIT_OVERALL_Q,
+    AUDIT_SECTION_Q,
+    AUDIT_SECTION_VAL,
+    AUDIT_STREET_Q,
 )
 from src.geo_filtering import filter_to_malden_geo
 from src.spatial_utils import geocodio_geocode, route_along_roads
@@ -26,10 +26,10 @@ def clean_walk_audit(raw_df):
     Drop PII, filter to walk-audit section, remove all-null rows and columns.
     Returns a cleaned DataFrame (typically 31 rows × 41 cols).
     """
-    df = raw_df.drop(columns=WALK_AUDIT_NAME_Q, errors='ignore')
+    df = raw_df.drop(columns=AUDIT_NAME_Q, errors='ignore')
     n_rows_raw = len(df)
     print(f"Number of rows: {n_rows_raw}")
-    df = df[df[WALK_AUDIT_SECTION_Q] == WALK_AUDIT_SECTION_VAL]
+    df = df[df[AUDIT_SECTION_Q] == AUDIT_SECTION_VAL]
     non_walk_rows = n_rows_raw - len(df)
     print(f"Non walk audit rows:{non_walk_rows}")
 
@@ -143,7 +143,7 @@ def parse_all_segments(walk_df):
     Apply parse_street_segment to every row and append parsed columns to walk_df.
     Returns the combined DataFrame.
     """
-    parsed = walk_df[WALK_AUDIT_STREET_Q].apply(parse_street_segment)
+    parsed = walk_df[AUDIT_STREET_Q].apply(parse_street_segment)
     parsed_df = pd.DataFrame(parsed.tolist())
     return pd.concat([walk_df.reset_index(drop=True), parsed_df], axis=1)
 
@@ -209,9 +209,9 @@ def geocode_intersections(intersections_df, api_key=None):
 def add_rating_colors(walk_df, rating_col=None):
     """
     Add a 'color' column mapped from the overall walkability rating string.
-    Defaults to WALK_AUDIT_OVERALL_Q from constants if rating_col is not given.
+    Defaults to AUDIT_OVERALL_Q from constants if rating_col is not given.
     """
-    col = rating_col or WALK_AUDIT_OVERALL_Q
+    col = rating_col or AUDIT_OVERALL_Q
     df = walk_df.copy()
     df['color'] = df[col].map(RATING_COLOR)
     return df
@@ -265,7 +265,7 @@ def build_route_geodataframes(geocoded_df, G, malden_boundary=None,
                                       end['lon'],   end['lat'])
             lines.append({
                 'geometry':          geom,
-                WALK_AUDIT_OVERALL_Q: start[WALK_AUDIT_OVERALL_Q],
+                AUDIT_OVERALL_Q: start[AUDIT_OVERALL_Q],
                 'color':             start['color'],
                 'along':             start.get('along'),
                 'audit_id':          i,

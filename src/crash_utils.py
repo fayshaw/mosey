@@ -1,7 +1,7 @@
 import re
 import pandas as pd
 from pathlib import Path
-from src.constants import RAW_CRASH_DATA_CSV
+from src.constants import CRASH_RAW
 
 def parse_crash_dates(df, col='crash_date'):
     """Parse crash_date strings (YYYY-MM-DD) to datetime. Returns df with new column."""
@@ -143,7 +143,7 @@ def split_data_years(df, out_dir):
     out_dir = Path(out_dir)
     for year in range(int(df['crash_year'].min()), int(df['crash_year'].max()) + 1):
         df[df['crash_year'] == year].to_csv(
-            out_dir / RAW_CRASH_DATA_CSV.format(year=year), index=False
+            out_dir / CRASH_RAW.format(year=year), index=False
         )
 
 def filter_crashes(df, **criteria):

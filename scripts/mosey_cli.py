@@ -39,8 +39,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.constants import (DB_PATH, OUT_DIR, CRASH_COUNTS_CSV,
-                           CRASH_SPATIAL_RANGE_PNG, CRASH_SPATIAL_YEAR_PNG)
+from src.constants import (CRASH_DB, OUT_DIR, CRASH_COUNTS_CSV,
+                           CRASH_SPATIAL_RANGE, CRASH_SPATIAL_YEAR)
 from src.load_data import load_crashes_from_db, load_malden_boundary, load_malden_roads
 from src.plot_counts import plot_crashes_over_time, plot_crashes_subplots_bar, plot_combined_crashes_subplots_bar
 from src.crash_utils import get_counts, filter_crashes, split_data_years, top_intersections, is_ped_crash, is_cycle_crash
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     start_year = 2015
     end_year = 2025
 
-    crash_df = load_crashes_from_db(DB_PATH, start_year=start_year, end_year=end_year, malden_only=True)
+    crash_df = load_crashes_from_db(CRASH_DB, start_year=start_year, end_year=end_year, malden_only=True)
     print(f"Loaded {len(crash_df):,} Malden crashes "
           f"({crash_df['crash_year'].min()}–{crash_df['crash_year'].max()})")
 
@@ -92,21 +92,21 @@ if __name__ == '__main__':
 #    years = [2021, 2022, 2023, 2024, 2025]
 #    years = [2015, 2016, 2017, 2018, 2019]
     #min_year, max_year = min(years), max(years)
-    map_df = load_crashes_from_db(DB_PATH, start_year=start_year, end_year=end_year, malden_only=True)
+    map_df = load_crashes_from_db(CRASH_DB, start_year=start_year, end_year=end_year, malden_only=True)
 
     plot_crashes_spatial(
         map_df, malden_gdf, malden_roads,
         title=f'Malden Car Crashes {start_year}-{end_year}',
-        save_path=OUT_DIR / CRASH_SPATIAL_RANGE_PNG.format(start_year=start_year, end_year=end_year))
+        save_path=OUT_DIR / CRASH_SPATIAL_RANGE.format(start_year=start_year, end_year=end_year))
 
     for year in years:
-        map_df = load_crashes_from_db(DB_PATH, start_year=year, end_year=year, malden_only=True)
+        map_df = load_crashes_from_db(CRASH_DB, start_year=year, end_year=year, malden_only=True)
         print(f"\nPlotting {len(map_df):,} crashes on the map for: {year}.")
 
         plot_crashes_spatial(
             map_df, malden_gdf, malden_roads,
             title=f'Malden Car Crashes {year}',
-            save_path=OUT_DIR / CRASH_SPATIAL_YEAR_PNG.format(year=year)
+            save_path=OUT_DIR / CRASH_SPATIAL_YEAR.format(year=year)
         )
 
 

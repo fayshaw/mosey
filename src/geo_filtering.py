@@ -3,7 +3,7 @@ Shared spatial filtering utilities for Malden boundary clipping.
 """
 import sqlite3
 import geopandas as gpd
-from src.constants import CRS, DB_PATH
+from src.constants import CRS, CRASH_DB
 
 def crashes_to_geodataframe(crash_df):
     """
@@ -20,7 +20,7 @@ def crashes_to_geodataframe(crash_df):
     return gdf
 
 
-def within_malden_flag(db_path=DB_PATH):
+def within_malden_flag(db_path=CRASH_DB):
     """
     Run the geo-filter once and write the result back to the Crashes table
     as the in_malden column.

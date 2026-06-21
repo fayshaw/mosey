@@ -89,7 +89,7 @@ def plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads,
     """
     import math
     import pandas as pd
-    from src.constants import RATING_COLOR, WALK_AUDIT_OVERALL_Q
+    from src.constants import RATING_COLOR, AUDIT_OVERALL_Q
 
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
     malden_gdf.plot(ax=ax,   color='whitesmoke', edgecolor='black', linewidth=1)
@@ -101,12 +101,12 @@ def plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads,
 
     # Lines first so they appear under the intersection points
     for rating, color in RATING_COLOR.items():
-        subset = gdf_lines[gdf_lines[WALK_AUDIT_OVERALL_Q] == rating]
+        subset = gdf_lines[gdf_lines[AUDIT_OVERALL_Q] == rating]
         if not subset.empty:
             subset.plot(ax=ax, color=color, linewidth=5, alpha=0.7)
 
     for rating, color in RATING_COLOR.items():
-        subset = gdf_all[gdf_all[WALK_AUDIT_OVERALL_Q] == rating]
+        subset = gdf_all[gdf_all[AUDIT_OVERALL_Q] == rating]
         if not subset.empty:
             subset.plot(ax=ax, color=color, markersize=35, alpha=0.8, label=rating)
 
@@ -177,7 +177,7 @@ def plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf,
     import math
     import contextily as ctx
     import pandas as pd
-    from src.constants import RATING_COLOR, WALK_AUDIT_OVERALL_Q
+    from src.constants import RATING_COLOR, AUDIT_OVERALL_Q
 
     WEB_MERCATOR = "EPSG:3857"
 
@@ -194,12 +194,12 @@ def plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf,
     ax.set_ylim(miny - pad, maxy + pad)
 
     for rating, color in RATING_COLOR.items():
-        subset = gdf_lines_wm[gdf_lines_wm[WALK_AUDIT_OVERALL_Q] == rating]
+        subset = gdf_lines_wm[gdf_lines_wm[AUDIT_OVERALL_Q] == rating]
         if not subset.empty:
             subset.plot(ax=ax, color=color, linewidth=5, alpha=0.8)
 
     for rating, color in RATING_COLOR.items():
-        subset = gdf_all_wm[gdf_all_wm[WALK_AUDIT_OVERALL_Q] == rating]
+        subset = gdf_all_wm[gdf_all_wm[AUDIT_OVERALL_Q] == rating]
         if not subset.empty:
             subset.plot(ax=ax, color=color, markersize=35, alpha=0.9, label=rating)
 

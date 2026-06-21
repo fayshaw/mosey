@@ -32,8 +32,8 @@ CRASH_RAW              = 'raw_crash_data_{year}.csv'
 # Walk audit file paths
 AUDIT_RAW         = DATA_DIR / "Walk_Audit_Responses_2026-06-19.xlsx"
 AUDIT_RAW_FIX     = DATA_DIR / "Walk_Audit_Responses_2026-06-19_edited.xlsx"
-AUDIT_GEO         = OUT_DIR  / "data_sources/audit_geocoded.csv"
-AUDIT_GEO_FIX     = OUT_DIR  / "data_sources/audit_geocoded_fixed.csv"
+AUDIT_GEO         = OUT_DIR  / "audit_geocoded.csv"
+AUDIT_GEO_FIX     = OUT_DIR  / "audit_geocoded_fixed.csv"
 AUDIT_WARD_COUNTS = OUT_DIR  / "ward_counts.png"
 AUDIT_MAP         = OUT_DIR  / "walk_audit_map.png"
 AUDIT_MAP_OSM     = OUT_DIR  / "walk_audit_map_osm.png"

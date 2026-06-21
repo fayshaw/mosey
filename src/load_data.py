@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 import pandas as pd
-from src.constants import COLUMN_MAP, DB_PATH, CRASH_FILE
+from src.constants import COLUMN_MAP, CRASH_DB, CRASH_FILE
 
 # ── Core crash data loading (no geopandas required) ──────────────────────────
 
@@ -11,7 +11,7 @@ def load_crash_csv(filepath=CRASH_FILE):
     return df.dropna(subset=['Crash Number'])
 
 
-def ingest_csv_to_db(csv_path=CRASH_FILE, db_path=DB_PATH):
+def ingest_csv_to_db(csv_path=CRASH_FILE, db_path=CRASH_DB):
     """
     Load a MassDOT crash CSV into the database.
     Safe to run on overlapping exports — INSERT OR IGNORE skips duplicate crash_numbers.
@@ -44,7 +44,7 @@ def ingest_csv_to_db(csv_path=CRASH_FILE, db_path=DB_PATH):
     print(f"Database now contains {total:,} rows.")
 
 
-def load_crashes_from_db(db_path=DB_PATH, start_year=None, end_year=None,
+def load_crashes_from_db(db_path=CRASH_DB, start_year=None, end_year=None,
                          malden_only=False):
     """
     Load crash data from the database into a DataFrame.
@@ -77,8 +77,8 @@ def load_crashes_from_db(db_path=DB_PATH, start_year=None, end_year=None,
 
 def load_walk_audit_excel(filepath=None):
     """Load raw walk audit responses from Excel. Returns unmodified DataFrame."""
-    from src.constants import WALK_AUDIT_FILE
-    path = filepath or WALK_AUDIT_FILE
+    from src.constants import AUDIT_RAW
+    path = filepath or AUDIT_RAW
     return pd.read_excel(path)
 
 
