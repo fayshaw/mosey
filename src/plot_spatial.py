@@ -71,6 +71,77 @@ def plot_crashes_spatial(crash_df, malden_gdf, malden_roads=None,
         print(f"Saved {save_path}")
     return fig, ax
 
+def plot_malden_wards(wards_gdf, save_path=None, figsize=(14, 12), dpi=200):
+    """
+    Choropleth of Malden's 8 wards. Precincts in wards_gdf are dissolved to ward
+    boundaries, each ward colored distinctly, ward number labeled at centroid.
+    """
+    import matplotlib.patches as mpatches
+    import geopandas as gpd
+
+    wards = wards_gdf.dissolve(by='WARD').reset_index()
+    wards['WARD'] = wards['WARD'].astype(int)
+    wards = wards.sort_values('WARD').reset_index(drop=True).to_crs('EPSG:26986')
+
+    cmap = plt.get_cmap('tab10')
+    colors = [cmap(i / 10) for i in range(len(wards))]
+
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+    wards.plot(ax=ax, color=colors, edgecolor='black', linewidth=1.5)
+
+    for i, (_, row) in enumerate(wards.iterrows()):
+        c = row.geometry.centroid
+        ax.text(c.x, c.y, str(row['WARD']),
+                fontsize=18, ha='center', va='center', fontweight='bold')
+
+    patches = [mpatches.Patch(color=colors[i], label=f"Ward {row['WARD']}")
+               for i, (_, row) in enumerate(wards.iterrows())]
+    ax.legend(handles=patches, title='Ward', fontsize=11, loc='lower right')
+    ax.set_title('Malden City Wards', fontsize=16, fontweight='bold')
+    ax.set_axis_off()
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=dpi, bbox_inches='tight', facecolor='white')
+        print(f"Saved {save_path}")
+    return fig, ax
+
+
+def plot_malden_wards_roads(wards_gdf, roads_gdf, save_path=None, figsize=(14, 12), dpi=200):
+    """
+    Ward boundaries (40% alpha) over the road network. Roads drawn first so they
+    show through the semi-transparent ward fill. Ward numbers labeled at centroids.
+    """
+    import matplotlib.patches as mpatches
+
+    wards = wards_gdf.dissolve(by='WARD').reset_index()
+    wards['WARD'] = wards['WARD'].astype(int)
+    wards = wards.sort_values('WARD').reset_index(drop=True).to_crs('EPSG:26986')
+    roads = roads_gdf.to_crs('EPSG:26986')
+
+    cmap = plt.get_cmap('tab10')
+    colors = [cmap(i / 10) for i in range(len(wards))]
+
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+    roads.plot(ax=ax, color='gray', linewidth=0.6, alpha=0.8)
+    wards.plot(ax=ax, color=colors, edgecolor='black', linewidth=1.5, alpha=0.4)
+
+    for i, (_, row) in enumerate(wards.iterrows()):
+        c = row.geometry.centroid
+        ax.text(c.x, c.y, str(row['WARD']),
+                fontsize=18, ha='center', va='center', fontweight='bold')
+
+    patches = [mpatches.Patch(color=colors[i], label=f"Ward {row['WARD']}")
+               for i, (_, row) in enumerate(wards.iterrows())]
+    ax.legend(handles=patches, title='Ward', fontsize=11, loc='lower right')
+    ax.set_title('Malden City Wards with Roads', fontsize=16, fontweight='bold')
+    ax.set_axis_off()
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=dpi, bbox_inches='tight', facecolor='white')
+        print(f"Saved {save_path}")
+    return fig, ax
+
+
 def plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads,
                         save_path=None, figsize=(20, 16), dpi=300):
     """

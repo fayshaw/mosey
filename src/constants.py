@@ -10,9 +10,10 @@ CRASH_FILE       = DATA_DIR / "Malden_crashesJan2015-1Dec2025.csv"
 CRASH_DB         = ROOT / "db/crashes.db"
 
 # GIS
-TOWN_SURVEY_SHP  = ROOT / "GIS/townssurvey_shp/TOWNSSURVEY_POLY.shp"
-ROADS_SHP        = ROOT / "GIS/statewide_viewer_SHP/gisdata/men1/infrastructure/EOTROADS_ARC.shp"
-ROAD_NETWORK     = ROOT / "GIS/malden_road_network.graphml"
+TOWN_SURVEY_SHP    = ROOT / "GIS/townssurvey_shp/TOWNSSURVEY_POLY.shp"
+ROADS_SHP          = ROOT / "GIS/statewide_viewer_SHP/gisdata/men1/infrastructure/EOTROADS_ARC.shp"
+ROAD_NETWORK       = ROOT / "GIS/malden_road_network.graphml"
+WARDSPRECINCTS_SHP = ROOT / "GIS/statewide_viewer_SHP/gisdata/men1/Political_Boundaries/WARDSPRECINCTS2022_POLY.shp"
 
 # Coordinate reference systems
 CRS                  = "EPSG:4326"
@@ -37,6 +38,8 @@ AUDIT_GEO_FIX     = OUT_DIR  / "audit_geocoded_fixed.csv"
 AUDIT_WARD_COUNTS = OUT_DIR  / "ward_counts.png"
 AUDIT_MAP         = OUT_DIR  / "walk_audit_map.png"
 AUDIT_MAP_OSM     = OUT_DIR  / "walk_audit_map_osm.png"
+WARD_MAP          = OUT_DIR  / "malden_wards.png"
+WARD_ROADS_MAP    = OUT_DIR  / "malden_wards_roads.png"
 
 
 # MassDOT CSV column names → database column names

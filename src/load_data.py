@@ -107,3 +107,17 @@ def load_malden_roads(shp_path=None):
     malden = load_malden_boundary()
     roads = gpd.read_file(path, bbox=tuple(malden.total_bounds))
     return roads.clip(malden)
+
+
+def load_malden_wards(shp_path=None):
+    """
+    Load 2022 Malden ward/precinct boundaries from the MassGIS shapefile.
+    Returns a 24-row GeoDataFrame (8 wards × 3 precincts) with columns:
+    WARD, PRECINCT, WP_DISTRIC, WP_NAME, POP_2020, geometry.
+    Requires geopandas.
+    """
+    import geopandas as gpd
+    from src.constants import WARDSPRECINCTS_SHP
+    path = shp_path or WARDSPRECINCTS_SHP
+    gdf = gpd.read_file(path)
+    return gdf[gdf['TOWN'] == 'MALDEN'].copy()
