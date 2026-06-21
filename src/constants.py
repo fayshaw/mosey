@@ -38,8 +38,9 @@ AUDIT_GEO_FIX     = OUT_DIR  / "audit_geocoded_fixed.csv"
 AUDIT_WARD_COUNTS = OUT_DIR  / "ward_counts.png"
 AUDIT_MAP         = OUT_DIR  / "walk_audit_map.png"
 AUDIT_MAP_OSM     = OUT_DIR  / "walk_audit_map_osm.png"
-WARD_MAP          = OUT_DIR  / "malden_wards.png"
-WARD_ROADS_MAP    = OUT_DIR  / "malden_wards_roads.png"
+WARD_MAP            = OUT_DIR  / "malden_wards.png"
+WARD_ROADS_MAP      = OUT_DIR  / "malden_wards_roads.png"
+WARD_ROADS_AUDIT_MAP = OUT_DIR / "malden_wards_roads_audit.png"
 
 
 # MassDOT CSV column names → database column names
@@ -95,6 +96,18 @@ COLUMN_MAP = {
 # Walk audit rating scales
 RATING_VALUE = {'Great': 4, 'Acceptable': 3, 'Mixed': 2, 'Poor': 1}
 RATING_COLOR = {'Great': 'darkgreen', 'Acceptable': 'lightgreen', 'Mixed': 'gold', 'Poor': 'red'}
+
+# Ward fill colors (keys are int ward numbers 1–8)
+WARD_COLORS = {
+    1: 'saddlebrown',
+    2: 'purple',
+    3: 'red',
+    4: 'orange',
+    5: 'yellow',
+    6: 'green',
+    7: 'gray',
+    8: 'blue',
+}
 
 # Malden-specific street name corrections applied after parsing.
 # Keys are title-cased names; values are the canonical form.

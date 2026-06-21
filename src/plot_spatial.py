@@ -74,30 +74,29 @@ def plot_crashes_spatial(crash_df, malden_gdf, malden_roads=None,
 def plot_malden_wards(wards_gdf, save_path=None, figsize=(14, 12), dpi=200):
     """
     Choropleth of Malden's 8 wards. Precincts in wards_gdf are dissolved to ward
-    boundaries, each ward colored distinctly, ward number labeled at centroid.
+    boundaries, each ward colored by WARD_COLORS, ward number labeled at centroid.
     """
     import matplotlib.patches as mpatches
-    import geopandas as gpd
+    from src.constants import WARD_COLORS
 
     wards = wards_gdf.dissolve(by='WARD').reset_index()
     wards['WARD'] = wards['WARD'].astype(int)
     wards = wards.sort_values('WARD').reset_index(drop=True).to_crs('EPSG:26986')
 
-    cmap = plt.get_cmap('tab10')
-    colors = [cmap(i / 10) for i in range(len(wards))]
+    colors = [WARD_COLORS[w] for w in wards['WARD']]
 
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
     wards.plot(ax=ax, color=colors, edgecolor='black', linewidth=1.5)
 
-    for i, (_, row) in enumerate(wards.iterrows()):
+    for _, row in wards.iterrows():
         c = row.geometry.centroid
         ax.text(c.x, c.y, str(row['WARD']),
                 fontsize=18, ha='center', va='center', fontweight='bold')
 
-    patches = [mpatches.Patch(color=colors[i], label=f"Ward {row['WARD']}")
-               for i, (_, row) in enumerate(wards.iterrows())]
+    patches = [mpatches.Patch(color=WARD_COLORS[w], label=f"Ward {w}")
+               for w in wards['WARD']]
     ax.legend(handles=patches, title='Ward', fontsize=11, loc='lower right')
-    ax.set_title('Malden City Wards', fontsize=16, fontweight='bold')
+    ax.set_title('City of Malden Wards', fontsize=24, fontweight='bold')
     ax.set_axis_off()
     plt.tight_layout()
     if save_path:
@@ -106,34 +105,59 @@ def plot_malden_wards(wards_gdf, save_path=None, figsize=(14, 12), dpi=200):
     return fig, ax
 
 
-def plot_malden_wards_roads(wards_gdf, roads_gdf, save_path=None, figsize=(14, 12), dpi=200):
+def plot_malden_wards_roads(wards_gdf, roads_gdf, save_path=None, figsize=(14, 12), dpi=200,
+                             gdf_all=None, gdf_lines=None):
     """
     Ward boundaries (40% alpha) over the road network. Roads drawn first so they
     show through the semi-transparent ward fill. Ward numbers labeled at centroids.
+
+    Optionally overlay walk audit data by passing gdf_all (points) and/or
+    gdf_lines (route segments), both output of build_route_geodataframes().
+    Audit lines and points are colored by walkability rating (RATING_COLOR).
     """
     import matplotlib.patches as mpatches
+    from src.constants import WARD_COLORS, RATING_COLOR, AUDIT_OVERALL_Q
 
     wards = wards_gdf.dissolve(by='WARD').reset_index()
     wards['WARD'] = wards['WARD'].astype(int)
     wards = wards.sort_values('WARD').reset_index(drop=True).to_crs('EPSG:26986')
     roads = roads_gdf.to_crs('EPSG:26986')
 
-    cmap = plt.get_cmap('tab10')
-    colors = [cmap(i / 10) for i in range(len(wards))]
+    colors = [WARD_COLORS[w] for w in wards['WARD']]
 
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
     roads.plot(ax=ax, color='gray', linewidth=0.6, alpha=0.8)
     wards.plot(ax=ax, color=colors, edgecolor='black', linewidth=1.5, alpha=0.4)
 
-    for i, (_, row) in enumerate(wards.iterrows()):
+    if gdf_lines is not None:
+        audit_lines = gdf_lines.to_crs('EPSG:26986')
+        for rating, color in RATING_COLOR.items():
+            subset = audit_lines[audit_lines[AUDIT_OVERALL_Q] == rating]
+            if not subset.empty:
+                subset.plot(ax=ax, color=color, linewidth=5, alpha=0.85)
+
+    if gdf_all is not None:
+        audit_pts = gdf_all.to_crs('EPSG:26986')
+        for rating, color in RATING_COLOR.items():
+            subset = audit_pts[audit_pts[AUDIT_OVERALL_Q] == rating]
+            if not subset.empty:
+                subset.plot(ax=ax, color=color, markersize=35, alpha=0.9)
+
+    for _, row in wards.iterrows():
         c = row.geometry.centroid
         ax.text(c.x, c.y, str(row['WARD']),
                 fontsize=18, ha='center', va='center', fontweight='bold')
 
-    patches = [mpatches.Patch(color=colors[i], label=f"Ward {row['WARD']}")
-               for i, (_, row) in enumerate(wards.iterrows())]
-    ax.legend(handles=patches, title='Ward', fontsize=11, loc='lower right')
-    ax.set_title('Malden City Wards with Roads', fontsize=16, fontweight='bold')
+    ward_patches = [mpatches.Patch(color=WARD_COLORS[w], label=f"Ward {w}")
+                    for w in wards['WARD']]
+    legend_handles = ward_patches
+    if gdf_lines is not None or gdf_all is not None:
+        audit_patches = [mpatches.Patch(color=c, label=r) for r, c in RATING_COLOR.items()]
+        legend_handles = ward_patches + audit_patches
+
+    ax.legend(handles=legend_handles, title='Ward / Rating', fontsize=11, loc='lower right')
+    title = 'City of Malden, Wards & Walk Audit' if (gdf_lines is not None or gdf_all is not None) else 'City of Malden, Wards'
+    ax.set_title(title, fontsize=24, fontweight='bold')
     ax.set_axis_off()
     plt.tight_layout()
     if save_path:
