@@ -27,9 +27,16 @@ def clean_walk_audit(raw_df):
     Returns a cleaned DataFrame (typically 31 rows × 41 cols).
     """
     df = raw_df.drop(columns=WALK_AUDIT_NAME_Q, errors='ignore')
+    n_rows_raw = len(df)
+    print(f"Number of rows: {n_rows_raw}")
     df = df[df[WALK_AUDIT_SECTION_Q] == WALK_AUDIT_SECTION_VAL]
+    non_walk_rows = n_rows_raw - len(df)
+    print(f"Non walk audit rows:{non_walk_rows}")
+
     df = df.dropna(axis=0, how='all')
     df = df.dropna(axis=1, how='all')
+    print(f"Null rows dropped: {non_walk_rows - len(df)}")
+
     return df.reset_index(drop=True)
 
 

@@ -94,6 +94,10 @@ def plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads,
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
     malden_gdf.plot(ax=ax,   color='whitesmoke', edgecolor='black', linewidth=1)
     malden_roads.plot(ax=ax, color='gray',       linewidth=0.75)
+    pad = 500
+    minx, miny, maxx, maxy = malden_gdf.total_bounds
+    ax.set_xlim(minx - pad, maxx + pad)
+    ax.set_ylim(miny - pad, maxy + pad)
 
     # Lines first so they appear under the intersection points
     for rating, color in RATING_COLOR.items():
@@ -117,9 +121,14 @@ def plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads,
 
     offset_pct = 0.02
     for street, (point, geom) in street_labels.items():
+        if point.is_empty:
+            continue
         p1 = geom.interpolate(0.49, normalized=True)
         p2 = geom.interpolate(0.51, normalized=True)
-        angle      = math.degrees(math.atan2(p2.y - p1.y, p2.x - p1.x))
+        if p1.is_empty or p2.is_empty or (p1.x == p2.x and p1.y == p2.y):
+            angle = 0.0
+        else:
+            angle = math.degrees(math.atan2(p2.y - p1.y, p2.x - p1.x))
         angle_norm = angle % 180
 
         if 45 < angle_norm < 135:
@@ -179,6 +188,10 @@ def plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf,
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 
     malden_wm.plot(ax=ax, facecolor='none', edgecolor='black', linewidth=1.5)
+    pad = 500
+    minx, miny, maxx, maxy = malden_wm.total_bounds
+    ax.set_xlim(minx - pad, maxx + pad)
+    ax.set_ylim(miny - pad, maxy + pad)
 
     for rating, color in RATING_COLOR.items():
         subset = gdf_lines_wm[gdf_lines_wm[WALK_AUDIT_OVERALL_Q] == rating]
@@ -199,9 +212,14 @@ def plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf,
 
     offset_pct = 0.02
     for street, (point, geom) in street_labels.items():
+        if point.is_empty:
+            continue
         p1 = geom.interpolate(0.49, normalized=True)
         p2 = geom.interpolate(0.51, normalized=True)
-        angle      = math.degrees(math.atan2(p2.y - p1.y, p2.x - p1.x))
+        if p1.is_empty or p2.is_empty or (p1.x == p2.x and p1.y == p2.y):
+            angle = 0.0
+        else:
+            angle = math.degrees(math.atan2(p2.y - p1.y, p2.x - p1.x))
         angle_norm = angle % 180
 
         if 45 < angle_norm < 135:

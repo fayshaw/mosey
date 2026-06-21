@@ -108,6 +108,7 @@ MALDEN_STREET_CORRECTIONS = {
     'Converse':      'Converse Ave',
     'Pearl':         'Pearl St',
     'Maple':         'Maple St',
+    'Essex':         'Essex St',
 }
 
 # Walk audit column question strings (must match the spreadsheet headers exactly)

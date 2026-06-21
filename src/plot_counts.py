@@ -9,7 +9,7 @@ All functions accept an out_dir argument so they can be called from any script
 without assuming a fixed output path.
 """
 import matplotlib.pyplot as plt
-from src.constants import OUT_DIR
+from src.constants import OUT_DIR, WALK_AUDIT_WARD_COUNTS
 
 # Size constants
 title_size = 16
@@ -197,7 +197,7 @@ def plot_combined_crashes_subplots_bar(counts_df, out_dir):
     print(f"Saved {path.name}")
 
 
-def plot_audit_ward_counts(ward_counts, plt_path=OUT_DIR / 'ward_counts.png'):
+def plot_audit_ward_counts(ward_counts, plt_path=WALK_AUDIT_WARD_COUNTS):
     labels = [label.encode('ascii', 'ignore').decode().strip() for label in ward_counts.index]
     plt.figure(figsize=(10, 6))
     plt.bar(labels, ward_counts.values)
