@@ -29,7 +29,7 @@ PLOT_STYLES = {
 }
 
 
-def plot_crashes_over_time(counts_df, OUT_DIR,
+def plot_crashes_over_time(counts_df,
                            include_crashes=True, include_ped=True, include_cycle=True,
                            include_ped_fatal=False, include_cycle_fatal=False):
     """Line chart of crash trends by year."""
@@ -61,7 +61,7 @@ def plot_crashes_over_time(counts_df, OUT_DIR,
     print(f"Saved {path.name}")
 
 
-def plot_crashes_subplots(counts_df, out_dir):
+def plot_crashes_subplots(counts_df):
     """Two-panel line chart: total crashes (top), ped/cycle crashes (bottom)."""
     fig, axes = plt.subplots(2, 1, figsize=(10, 6))
 
@@ -83,13 +83,13 @@ def plot_crashes_subplots(counts_df, out_dir):
     min_year = min(counts_df.index)
     max_year = max(counts_df.index)
 
-    path = out_dir / CRASH_TRENDS_SUBPLOTS.format(min_year=min_year, max_year=max_year)
+    path = OUT_DIR / CRASH_TRENDS_SUBPLOTS.format(min_year=min_year, max_year=max_year)
     plt.savefig(path)
     plt.close()
     print(f"Saved {path.name}")
 
 
-def plot_crashes_subplots_bar(counts_df, out_dir):
+def plot_crashes_subplots_bar(counts_df):
     """Three-panel chart: total line, ped/cycle line, fatal bar chart."""
     fig, axes = plt.subplots(3, 1, figsize=(12, 10))
     xticks = counts_df.index
@@ -134,13 +134,13 @@ def plot_crashes_subplots_bar(counts_df, out_dir):
     min_year = min(counts_df.index)
     max_year = max(counts_df.index)
 
-    path = out_dir / CRASH_TRENDS_BAR.format(min_year=min_year, max_year=max_year)
+    path = OUT_DIR / CRASH_TRENDS_BAR.format(min_year=min_year, max_year=max_year)
     plt.savefig(path)
     plt.close()
     print(f"Saved {path.name}")
 
 
-def plot_combined_crashes_subplots_bar(counts_df, out_dir):
+def plot_combined_crashes_subplots_bar(counts_df):
     """Three-panel chart: total line, ped/cycle line, fatal bar chart."""
     fig, axes = plt.subplots(3, 1, figsize=(12, 10))
     xticks = counts_df.index
@@ -192,7 +192,7 @@ def plot_combined_crashes_subplots_bar(counts_df, out_dir):
     min_year = min(counts_df.index)
     max_year = max(counts_df.index)
 
-    path = out_dir / CRASH_TRENDS_COMBINED.format(min_year=min_year, max_year=max_year)
+    path = OUT_DIR / CRASH_TRENDS_COMBINED.format(min_year=min_year, max_year=max_year)
     plt.savefig(path)
     plt.close()
     print(f"Saved {path.name}")

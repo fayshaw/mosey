@@ -79,9 +79,9 @@ if __name__ == '__main__':
     all_counts_df.to_csv(CRASH_COUNTS_CSV)
     print("Saved crash_counts_by_year.csv")
 
-    plot_crashes_subplots_bar(all_counts_df, OUT_DIR)
-    plot_crashes_over_time(all_counts_df, OUT_DIR)
-    plot_combined_crashes_subplots_bar(all_counts_df, OUT_DIR)
+    plot_crashes_subplots_bar(all_counts_df)
+    plot_crashes_over_time(all_counts_df)
+    plot_combined_crashes_subplots_bar(all_counts_df)
 
     # ── Spatial map (recent years, Malden boundary only) ─────────────────────
 
