@@ -16,6 +16,7 @@ from src.constants import (
     AUDIT_SECTION_Q,
     AUDIT_SECTION_VAL,
     AUDIT_STREET_Q,
+    AUDIT_WARD_Q,
 )
 from src.geo_filtering import filter_to_malden_geo
 from src.spatial_utils import geocodio_geocode, route_along_roads
@@ -218,6 +219,73 @@ def add_rating_colors(walk_df, rating_col=None):
     df = walk_df.copy()
     df['color'] = df[col].map(RATING_COLOR)
     return df
+
+
+def walk_audit_summary(raw_df, geocoded_df):
+    """
+    Print and return a summary dict of walk audit statistics.
+
+    Parameters
+    ----------
+    raw_df      : output of load_walk_audit_excel() — needed for auditor names
+                  before clean_walk_audit() strips PII
+    geocoded_df : output of geocode_intersections() — has begin/end rows,
+                  geocoding_status, intersection, along, and rating columns
+    """
+    walk_rows = raw_df[raw_df[AUDIT_SECTION_Q] == AUDIT_SECTION_VAL]
+
+    # Unique auditors: split comma-separated and "and"-joined name strings
+    all_names = []
+    for entry in walk_rows[AUDIT_NAME_Q].dropna():
+        parts = re.split(r',|\band\b', str(entry), flags=re.IGNORECASE)
+        all_names.extend(p.strip().title() for p in parts if p.strip())
+    unique_auditors = sorted(set(all_names))
+
+    # Wards: strip emoji and trailing parenthetical, keep "Ward N"
+    ward_raw = walk_rows[AUDIT_WARD_Q].dropna()
+    ward_labels = (ward_raw
+                   .str.encode('ascii', 'ignore').str.decode('ascii')
+                   .str.strip()
+                   .str.extract(r'(Ward \d+)')[0]
+                   .dropna())
+    unique_wards = sorted(ward_labels.unique())
+
+    # Begin-only rows avoid double-counting (each audit has a begin + end row)
+    begin = geocoded_df[geocoded_df['endpoint'] == 'begin']
+
+    unique_streets     = sorted(begin['along'].dropna().unique())
+    unique_intersect   = geocoded_df['intersection'].dropna().nunique()
+    geo_status         = geocoded_df['geocoding_status'].value_counts().to_dict()
+    ratings            = begin[AUDIT_OVERALL_Q].value_counts().to_dict()
+
+    summary = {
+        'audits_completed':      len(walk_rows),
+        'unique_auditors':       len(unique_auditors),
+        'auditors':              unique_auditors,
+        'wards_represented':     unique_wards,
+        'unique_streets':        unique_streets,
+        'unique_intersections':  unique_intersect,
+        'geocoding_status':      geo_status,
+        'ratings':               ratings,
+    }
+
+    # Print
+    print("=== Walk Audit Summary ===")
+    print(f"  Audits completed    : {summary['audits_completed']}")
+    print(f"  Unique auditors     : {summary['unique_auditors']}  ({', '.join(unique_auditors)})")
+    print(f"  Wards represented   : {len(unique_wards)}  ({', '.join(unique_wards)})")
+    print(f"  Unique streets      : {len(unique_streets)}  ({', '.join(unique_streets)})")
+    print(f"  Unique intersections: {unique_intersect}")
+    print()
+    print("  Ratings (begin endpoints):")
+    for rating, n in sorted(ratings.items(), key=lambda x: -x[1]):
+        print(f"    {rating:<12} {n}")
+    print()
+    print("  Geocoding status:")
+    for status, n in sorted(geo_status.items(), key=lambda x: -x[1]):
+        print(f"    {status:<20} {n}")
+
+    return summary
 
 
 def build_route_geodataframes(geocoded_df, G, malden_boundary=None,

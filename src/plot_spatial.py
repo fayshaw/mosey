@@ -161,7 +161,7 @@ def plot_malden_wards_roads(wards_gdf, roads_gdf, save_path=None, figsize=(14, 1
         legend_handles = audit_patches
 
     ax.legend(handles=legend_handles, title='Ward / Rating', fontsize=11, loc='lower right')
-    title = 'City of Malden, Wards & Walk Audit' if (gdf_lines is not None or gdf_all is not None) else 'City of Malden, Wards'
+    title = 'City of Malden \n Ward Walk Audits' if (gdf_lines is not None or gdf_all is not None) else 'City of Malden'
     ax.set_title(title, fontsize=24, fontweight='bold')
     ax.set_axis_off()
     plt.tight_layout()

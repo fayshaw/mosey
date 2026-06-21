@@ -34,6 +34,7 @@ from src.walk_audit import (
     clean_walk_audit,
     geocode_intersections,
     parse_all_segments,
+    walk_audit_summary,
 )
 from src.plot_counts import plot_audit_ward_counts
 
@@ -76,6 +77,9 @@ else:
     map_input = AUDIT_GEO
 print(f"Using {map_input} for mapping")
 geocoded_df = pd.read_csv(map_input)
+
+raw_df = load_walk_audit_excel(AUDIT_RAW)
+walk_audit_summary(raw_df, geocoded_df)
 
 ward_counts = geocoded_df[AUDIT_WARD_Q].value_counts()
 plot_audit_ward_counts(ward_counts, plt_path=AUDIT_WARD_COUNTS)
