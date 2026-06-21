@@ -30,12 +30,15 @@ def clean_walk_audit(raw_df):
     n_rows_raw = len(df)
     print(f"Number of rows: {n_rows_raw}")
     df = df[df[AUDIT_SECTION_Q] == AUDIT_SECTION_VAL]
-    non_walk_rows = n_rows_raw - len(df)
+    walk_rows = len(df)
+    print(f"Walk audit rows:{walk_rows}")
+
+    non_walk_rows = n_rows_raw - walk_rows
     print(f"Non walk audit rows:{non_walk_rows}")
 
     df = df.dropna(axis=0, how='all')
     df = df.dropna(axis=1, how='all')
-    print(f"Null rows dropped: {non_walk_rows - len(df)}")
+    print(f"Null rows dropped: {len(df) - walk_rows}")
 
     return df.reset_index(drop=True)
 

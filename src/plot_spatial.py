@@ -95,8 +95,8 @@ def plot_malden_wards(wards_gdf, save_path=None, figsize=(14, 12), dpi=200):
 
     patches = [mpatches.Patch(color=WARD_COLORS[w], label=f"Ward {w}")
                for w in wards['WARD']]
-    ax.legend(handles=patches, title='Ward', fontsize=11, loc='lower right')
-    ax.set_title('City of Malden Wards', fontsize=24, fontweight='bold')
+    ax.legend(handles=patches, title='Ward', fontsize=20, loc='lower right')
+    ax.set_title('City of Malden \n Ward map', fontsize=24, fontweight='bold')
     ax.set_axis_off()
     plt.tight_layout()
     if save_path:
@@ -129,6 +129,11 @@ def plot_malden_wards_roads(wards_gdf, roads_gdf, save_path=None, figsize=(14, 1
     roads.plot(ax=ax, color='gray', linewidth=0.6, alpha=0.8)
     wards.plot(ax=ax, color=colors, edgecolor='black', linewidth=1.5, alpha=0.4)
 
+    pad = 500
+    minx, miny, maxx, maxy = wards.total_bounds
+    ax.set_xlim(minx - pad, maxx + pad)
+    ax.set_ylim(miny - pad, maxy + pad)
+
     if gdf_lines is not None:
         audit_lines = gdf_lines.to_crs('EPSG:26986')
         for rating, color in RATING_COLOR.items():
@@ -150,10 +155,10 @@ def plot_malden_wards_roads(wards_gdf, roads_gdf, save_path=None, figsize=(14, 1
 
     ward_patches = [mpatches.Patch(color=WARD_COLORS[w], label=f"Ward {w}")
                     for w in wards['WARD']]
-    legend_handles = ward_patches
+    #legend_handles = ward_patches
     if gdf_lines is not None or gdf_all is not None:
         audit_patches = [mpatches.Patch(color=c, label=r) for r, c in RATING_COLOR.items()]
-        legend_handles = ward_patches + audit_patches
+        legend_handles = audit_patches
 
     ax.legend(handles=legend_handles, title='Ward / Rating', fontsize=11, loc='lower right')
     title = 'City of Malden, Wards & Walk Audit' if (gdf_lines is not None or gdf_all is not None) else 'City of Malden, Wards'
