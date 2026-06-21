@@ -5,30 +5,39 @@ ROOT = Path(__file__).parent.parent
 OUT_DIR = ROOT / 'output'
 DATA_DIR = ROOT / 'data_sources'
 
-# File paths
-CRASH_FILE             = DATA_DIR / "Malden_crashesJan2015-1Dec2025.csv"
-WALK_AUDIT_FILE        = DATA_DIR / "Walk_Audit_Responses_2026-06-19.xlsx"
-TOWN_SURVEY_SHP        = ROOT / "GIS/townssurvey_shp/TOWNSSURVEY_POLY.shp"
-ROADS_SHP              = ROOT / "GIS/statewide_viewer_SHP/gisdata/men1/infrastructure/EOTROADS_ARC.shp"
-ROAD_NETWORK_CACHE     = ROOT / "GIS/malden_road_network.graphml"
-DB_PATH                = ROOT / "db/crashes.db"
-WALK_AUDIT_GEO         = ROOT / "data_sources/walk_audit_geocoded.csv"
-WALK_AUDIT_GEO_FIX     = ROOT / "data_sources/walk_audit_geocoded_fixed_audit.csv"
-WALK_AUDIT_WARD_COUNTS = OUT_DIR / "ward_counts.png"
-WALK_AUDIT_MAP         = OUT_DIR / "walk_audit_map.png"
-WALK_AUDIT_MAP_OSM     = OUT_DIR / "walk_audit_map_osm.png"
+# Crashes
+CRASH_FILE       = DATA_DIR / "Malden_crashesJan2015-1Dec2025.csv"
+CRASH_DB         = ROOT / "db/crashes.db"
 
-# Crash output paths — static
-CRASH_COUNTS_CSV           = OUT_DIR / 'crash_counts_by_year.csv'
+# GIS
+TOWN_SURVEY_SHP  = ROOT / "GIS/townssurvey_shp/TOWNSSURVEY_POLY.shp"
+ROADS_SHP        = ROOT / "GIS/statewide_viewer_SHP/gisdata/men1/infrastructure/EOTROADS_ARC.shp"
+ROAD_NETWORK     = ROOT / "GIS/malden_road_network.graphml"
 
-# Crash output paths — filename templates (call .format() with named params)
-CRASH_TRENDS_PNG           = 'crash_trends_{start_year}-{end_year}.png'
-CRASH_TRENDS_SUBPLOTS_PNG  = 'crash_trends_subplots_{min_year}-{max_year}.png'
-CRASH_TRENDS_BAR_PNG       = 'crash_trends_subplots_bar_{min_year}-{max_year}.png'
-CRASH_TRENDS_COMBINED_PNG  = 'crash_trends_combined_and_subplots_bar_{min_year}-{max_year}'
-CRASH_SPATIAL_RANGE_PNG    = 'crashes_spatial_{start_year}-{end_year}.png'
-CRASH_SPATIAL_YEAR_PNG     = 'crashes_spatial_{year}.png'
-RAW_CRASH_DATA_CSV         = 'raw_crash_data_{year}.csv'
+# Coordinate reference systems
+CRS                  = "EPSG:4326"
+CRS_WGS84            = "EPSG:4326"
+CRS_MASS_STATE_PLANE = "EPSG:26986"
+
+# Crash output file paths
+CRASH_COUNTS_CSV       = OUT_DIR  / 'crash_counts_by_year.csv'
+CRASH_TRENDS           = 'crashes_{start_year}-{end_year}.png'
+CRASH_TRENDS_SUBPLOTS  = 'crashes_subplots_{min_year}-{max_year}.png'
+CRASH_TRENDS_BAR       = 'crashes_bar_{min_year}-{max_year}.png'
+CRASH_TRENDS_COMBINED  = 'crashes_subplots_bar_{min_year}-{max_year}'
+CRASH_SPATIAL_RANGE    = 'crashes_spatial_{start_year}-{end_year}.png'
+CRASH_SPATIAL_YEAR     = 'crashes_spatial_{year}.png'
+CRASH_RAW              = 'raw_crash_data_{year}.csv'
+
+# Walk audit file paths
+AUDIT_RAW         = DATA_DIR / "Walk_Audit_Responses_2026-06-19.xlsx"
+AUDIT_RAW_FIX     = DATA_DIR / "Walk_Audit_Responses_2026-06-19_edited.xlsx"
+AUDIT_GEO         = OUT_DIR  / "data_sources/audit_geocoded.csv"
+AUDIT_GEO_FIX     = OUT_DIR  / "data_sources/audit_geocoded_fixed.csv"
+AUDIT_WARD_COUNTS = OUT_DIR  / "ward_counts.png"
+AUDIT_MAP         = OUT_DIR  / "walk_audit_map.png"
+AUDIT_MAP_OSM     = OUT_DIR  / "walk_audit_map_osm.png"
+
 
 # MassDOT CSV column names → database column names
 COLUMN_MAP = {
@@ -80,11 +89,6 @@ COLUMN_MAP = {
     'Crash Report IDs':                                     'crash_report_ids',
 }
 
-# Coordinate reference systems
-CRS                  = "EPSG:4326"
-CRS_WGS84            = "EPSG:4326"
-CRS_MASS_STATE_PLANE = "EPSG:26986"
-
 # Walk audit rating scales
 RATING_VALUE = {'Great': 4, 'Acceptable': 3, 'Mixed': 2, 'Poor': 1}
 RATING_COLOR = {'Great': 'darkgreen', 'Acceptable': 'lightgreen', 'Mixed': 'gold', 'Poor': 'red'}
@@ -93,14 +97,11 @@ RATING_COLOR = {'Great': 'darkgreen', 'Acceptable': 'lightgreen', 'Mixed': 'gold
 # Keys are title-cased names; values are the canonical form.
 # Add entries here whenever a survey response uses the wrong or missing suffix.
 MALDEN_STREET_CORRECTIONS = {
-    # Missing suffixes on primary (along) streets
+    # Missing suffixes
     'Main':          'Main St',
     'Summer':        'Summer St',
     'Salem':         'Salem St',
     'Lebanon':       'Lebanon St',
-    # Wrong suffix in survey responses
-    'Bell Rock Ave': 'Bell Rock St',
-    # Cross streets (begin/end) that frequently lose their suffix
     'Canal':         'Canal St',
     'Medford':       'Medford St',
     'Highland':      'Highland Ave',
@@ -121,15 +122,17 @@ MALDEN_STREET_CORRECTIONS = {
     'Pearl':         'Pearl St',
     'Maple':         'Maple St',
     'Essex':         'Essex St',
+    # Wrong suffix in survey responses
+    'Bell Rock Ave': 'Bell Rock St',
 }
 
 # Walk audit column question strings (must match the spreadsheet headers exactly)
-WALK_AUDIT_NAME_Q      = "If you would like to be contacted for follow ups, please share your name. If in a group, share everyone's name separated by commas."
-WALK_AUDIT_WARD_Q      = "What Ward are you Walking in? (Optional)"
-WALK_AUDIT_SECTION_Q   = "Which Section of the Walk Audit are you Completing?"
-WALK_AUDIT_SECTION_VAL = "Sidewalks, Streets and Crossings (WALKING AUDIT)"
-WALK_AUDIT_STREET_Q    = "Which street are you auditing? Please indicate starting and ending locations. \nEx. Pleasant St. from Commercial to Main"
-WALK_AUDIT_OVERALL_Q   = "Walkability of the area, based on the findings above:  "
+AUDIT_NAME_Q      = "If you would like to be contacted for follow ups, please share your name. If in a group, share everyone's name separated by commas."
+AUDIT_WARD_Q      = "What Ward are you Walking in? (Optional)"
+AUDIT_SECTION_Q   = "Which Section of the Walk Audit are you Completing?"
+AUDIT_SECTION_VAL = "Sidewalks, Streets and Crossings (WALKING AUDIT)"
+AUDIT_STREET_Q    = "Which street are you auditing? Please indicate starting and ending locations. \nEx. Pleasant St. from Commercial to Main"
+AUDIT_OVERALL_Q   = "Walkability of the area, based on the findings above:  "
 
 SEARCH_RADIUS = 150  # feet radius for nearby-crash queries
 SCHOOL_RADIUS = 300  # feet — wider search area around school buildings to take into account multiple intersections
