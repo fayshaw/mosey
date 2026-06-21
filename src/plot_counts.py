@@ -9,7 +9,9 @@ All functions accept an out_dir argument so they can be called from any script
 without assuming a fixed output path.
 """
 import matplotlib.pyplot as plt
-from src.constants import OUT_DIR, WALK_AUDIT_WARD_COUNTS
+from src.constants import (OUT_DIR, WALK_AUDIT_WARD_COUNTS,
+                           CRASH_TRENDS_PNG, CRASH_TRENDS_SUBPLOTS_PNG,
+                           CRASH_TRENDS_BAR_PNG, CRASH_TRENDS_COMBINED_PNG)
 
 # Size constants
 title_size = 16
@@ -53,7 +55,7 @@ def plot_crashes_over_time(counts_df, OUT_DIR,
     ax.set_yticks(range(0, max(counts_df['crash_counts']), 100))
     ax.grid(True)
     plt.tight_layout()
-    path = OUT_DIR / f'crash_trends_{start_year}-{end_year}.png'
+    path = OUT_DIR / CRASH_TRENDS_PNG.format(start_year=start_year, end_year=end_year)
     plt.savefig(path)
     plt.close()
     print(f"Saved {path.name}")
@@ -81,7 +83,7 @@ def plot_crashes_subplots(counts_df, out_dir):
     min_year = min(counts_df.index)
     max_year = max(counts_df.index)
 
-    path = out_dir / f'crash_trends_subplots_{min_year}-{max_year}.png'
+    path = out_dir / CRASH_TRENDS_SUBPLOTS_PNG.format(min_year=min_year, max_year=max_year)
     plt.savefig(path)
     plt.close()
     print(f"Saved {path.name}")
@@ -132,8 +134,7 @@ def plot_crashes_subplots_bar(counts_df, out_dir):
     min_year = min(counts_df.index)
     max_year = max(counts_df.index)
 
-    path = out_dir / f'crash_trends_subplots_bar_{min_year}-{max_year}.png'
-#    path = out_dir / 'crash_trends_subplots_bar.png'
+    path = out_dir / CRASH_TRENDS_BAR_PNG.format(min_year=min_year, max_year=max_year)
     plt.savefig(path)
     plt.close()
     print(f"Saved {path.name}")
@@ -191,7 +192,7 @@ def plot_combined_crashes_subplots_bar(counts_df, out_dir):
     min_year = min(counts_df.index)
     max_year = max(counts_df.index)
 
-    path = out_dir / f'crash_trends_combined_and_subplots_bar_{min_year}-{max_year}'
+    path = out_dir / CRASH_TRENDS_COMBINED_PNG.format(min_year=min_year, max_year=max_year)
     plt.savefig(path)
     plt.close()
     print(f"Saved {path.name}")

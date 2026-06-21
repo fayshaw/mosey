@@ -14,9 +14,21 @@ ROAD_NETWORK_CACHE     = ROOT / "GIS/malden_road_network.graphml"
 DB_PATH                = ROOT / "db/crashes.db"
 WALK_AUDIT_GEO         = ROOT / "data_sources/walk_audit_geocoded.csv"
 WALK_AUDIT_GEO_FIX     = ROOT / "data_sources/walk_audit_geocoded_fixed_audit.csv"
-WALK_AUDIT_WARD_COUNTS = ROOT / "output/ward_counts.png"
+WALK_AUDIT_WARD_COUNTS = OUT_DIR / "ward_counts.png"
 WALK_AUDIT_MAP         = OUT_DIR / "walk_audit_map.png"
 WALK_AUDIT_MAP_OSM     = OUT_DIR / "walk_audit_map_osm.png"
+
+# Crash output paths — static
+CRASH_COUNTS_CSV           = OUT_DIR / 'crash_counts_by_year.csv'
+
+# Crash output paths — filename templates (call .format() with named params)
+CRASH_TRENDS_PNG           = 'crash_trends_{start_year}-{end_year}.png'
+CRASH_TRENDS_SUBPLOTS_PNG  = 'crash_trends_subplots_{min_year}-{max_year}.png'
+CRASH_TRENDS_BAR_PNG       = 'crash_trends_subplots_bar_{min_year}-{max_year}.png'
+CRASH_TRENDS_COMBINED_PNG  = 'crash_trends_combined_and_subplots_bar_{min_year}-{max_year}'
+CRASH_SPATIAL_RANGE_PNG    = 'crashes_spatial_{start_year}-{end_year}.png'
+CRASH_SPATIAL_YEAR_PNG     = 'crashes_spatial_{year}.png'
+RAW_CRASH_DATA_CSV         = 'raw_crash_data_{year}.csv'
 
 # MassDOT CSV column names → database column names
 COLUMN_MAP = {

@@ -39,7 +39,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.constants import DB_PATH, OUT_DIR
+from src.constants import (DB_PATH, OUT_DIR, CRASH_COUNTS_CSV,
+                           CRASH_SPATIAL_RANGE_PNG, CRASH_SPATIAL_YEAR_PNG)
 from src.load_data import load_crashes_from_db, load_malden_boundary, load_malden_roads
 from src.plot_counts import plot_crashes_over_time, plot_crashes_subplots_bar, plot_combined_crashes_subplots_bar
 from src.crash_utils import get_counts, filter_crashes, split_data_years, top_intersections, is_ped_crash, is_cycle_crash
@@ -75,7 +76,7 @@ if __name__ == '__main__':
         all_counts_df = pd.concat([all_counts_df, get_counts(subset, crash_type)], axis=1)
 
     all_counts_df = all_counts_df.fillna(0).astype(int)
-    all_counts_df.to_csv(OUT_DIR / 'crash_counts_by_year.csv')
+    all_counts_df.to_csv(CRASH_COUNTS_CSV)
     print("Saved crash_counts_by_year.csv")
 
     plot_crashes_subplots_bar(all_counts_df, OUT_DIR)
@@ -96,7 +97,7 @@ if __name__ == '__main__':
     plot_crashes_spatial(
         map_df, malden_gdf, malden_roads,
         title=f'Malden Car Crashes {start_year}-{end_year}',
-        save_path=OUT_DIR / f'crashes_spatial_{start_year}-{end_year}.png')
+        save_path=OUT_DIR / CRASH_SPATIAL_RANGE_PNG.format(start_year=start_year, end_year=end_year))
 
     for year in years:
         map_df = load_crashes_from_db(DB_PATH, start_year=year, end_year=year, malden_only=True)
@@ -105,7 +106,7 @@ if __name__ == '__main__':
         plot_crashes_spatial(
             map_df, malden_gdf, malden_roads,
             title=f'Malden Car Crashes {year}',
-            save_path=OUT_DIR / f'crashes_spatial_{year}.png'
+            save_path=OUT_DIR / CRASH_SPATIAL_YEAR_PNG.format(year=year)
         )
 
 
