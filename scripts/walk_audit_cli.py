@@ -3,15 +3,15 @@ Run the full walk audit pipeline:
   load → clean → parse → geocode → route → visualize → save
 
 Usage:
-  python walk_audit_cli.py                          # map from existing geocoded CSV
-  python walk_audit_cli.py --geocode                # re-geocode from Excel, then map
-  python walk_audit_cli.py --input path/to/file     # map from a specific CSV
-  python walk_audit_cli.py --input path/to/file.xlsx  # geocode from Excel, then map
+  python walk_audit_cli.py                                      # map from existing geocoded CSV
+  python walk_audit_cli.py --geocode                            # re-geocode from default Excel, then map
+  python walk_audit_cli.py --geocode --input path/to/file.xlsx # re-geocode from specific Excel, then map
+  python walk_audit_cli.py --input path/to/file.csv            # map from a specific geocoded CSV
 
 Outputs:
-  output/walk_audit_geocoded.csv   — geocoded intersection data
-  output/walk_audit_map.png        — walk audit ratings map (road-network style)
-  output/walk_audit_map_osm.png    — walk audit ratings map (OSM tile basemap)
+  output/audit_geocoded.csv   — geocoded intersection data
+  output/walk_audit_map.png   — walk audit ratings map (road-network style)
+  output/walk_audit_map_osm.png — walk audit ratings map (OSM tile basemap)
 """
 import argparse
 import sys
@@ -43,9 +43,9 @@ load_dotenv()
 
 parser = argparse.ArgumentParser(description="Walk audit map pipeline")
 parser.add_argument('--geocode', action='store_true',
-                    help='Re-run geocoding from the Excel source before mapping')
-parser.add_argument('--input', metavar='CSV',
-                    help='Use a specific geocoded CSV instead of the default')
+                    help='Re-geocode from Excel before mapping. Use --input to specify a non-default Excel file.')
+parser.add_argument('--input', metavar='FILE',
+                    help='With --geocode: Excel file to geocode. Without: geocoded CSV to map from.')
 args = parser.parse_args()
 
 def run_geocode_pipeline(excel_path):
@@ -73,11 +73,10 @@ def run_geocode_pipeline(excel_path):
 input_path = Path(args.input) if args.input else None
 
 if args.geocode:
-    run_geocode_pipeline(AUDIT_RAW)
-elif input_path and input_path.suffix.lower() == '.xlsx':
-    run_geocode_pipeline(input_path)
-
-if input_path and input_path.suffix.lower() != '.xlsx':
+    excel_source = input_path if input_path else AUDIT_RAW
+    run_geocode_pipeline(excel_source)
+    map_input = AUDIT_GEO
+elif input_path:
     map_input = input_path
 elif AUDIT_GEO_FIX.exists():
     map_input = AUDIT_GEO_FIX
@@ -86,7 +85,7 @@ else:
 print(f"Using {map_input} for mapping")
 geocoded_df = pd.read_csv(map_input)
 
-excel_source = input_path if (input_path and input_path.suffix.lower() == '.xlsx') else AUDIT_RAW
+excel_source = input_path if (args.geocode and input_path) else AUDIT_RAW
 raw_df = load_walk_audit_excel(excel_source)
 walk_audit_summary(raw_df, geocoded_df)
 
