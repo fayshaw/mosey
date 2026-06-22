@@ -3,9 +3,9 @@ Run the full walk audit pipeline:
   load → clean → parse → geocode → route → visualize → save
 
 Usage:
-  python run_walk_audit.py                      # map from existing geocoded CSV
-  python run_walk_audit.py --geocode            # re-geocode from Excel, then map
-  python run_walk_audit.py --input path/to/file # map from a specific CSV
+  python walk_audit_cli.py                      # map from existing geocoded CSV
+  python walk_audit_cli.py --geocode            # re-geocode from Excel, then map
+  python walk_audit_cli.py --input path/to/file # map from a specific CSV
 
 Outputs:
   output/walk_audit_geocoded.csv   — geocoded intersection data
@@ -27,7 +27,7 @@ from src.constants import (AUDIT_RAW, AUDIT_OVERALL_Q, AUDIT_WARD_Q,
 from src.load_data import load_malden_boundary, load_malden_roads, load_walk_audit_excel
 from src.plot_spatial import plot_walk_audit_map, plot_walk_audit_map_osm
 from src.spatial_utils import get_malden_road_network
-from src.walk_audit import (
+from src.walk_utils import (
     add_rating_colors,
     build_intersection_strings,
     build_route_geodataframes,
