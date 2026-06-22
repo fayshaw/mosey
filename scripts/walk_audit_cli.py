@@ -9,9 +9,10 @@ Usage:
   python walk_audit_cli.py --input path/to/file.csv            # map from a specific geocoded CSV
 
 Outputs:
-  output/audit_geocoded.csv   — geocoded intersection data
-  output/walk_audit_map.png   — walk audit ratings map (road-network style)
+  output/audit_geocoded.csv     — geocoded intersection data
+  output/walk_audit_map.png     — walk audit ratings map (road-network style)
   output/walk_audit_map_osm.png — walk audit ratings map (OSM tile basemap)
+  output/walk_audit_map.html    — interactive map with draggable labels (--html only)
 """
 import argparse
 import sys
@@ -24,9 +25,9 @@ from dotenv import load_dotenv
 
 from src.constants import (AUDIT_RAW, AUDIT_OVERALL_Q, AUDIT_WARD_Q,
                            AUDIT_GEO, AUDIT_GEO_FIX, AUDIT_WARD_COUNTS,
-                           AUDIT_MAP, AUDIT_MAP_OSM)
+                           AUDIT_MAP, AUDIT_MAP_OSM, AUDIT_MAP_HTML)
 from src.load_data import load_malden_boundary, load_malden_roads, load_walk_audit_excel
-from src.plot_spatial import plot_walk_audit_map, plot_walk_audit_map_osm
+from src.plot_spatial import plot_walk_audit_map, plot_walk_audit_map_osm, plot_walk_audit_map_html
 from src.spatial_utils import get_malden_road_network
 from src.walk_utils import (
     add_rating_colors,
@@ -46,6 +47,8 @@ parser.add_argument('--geocode', action='store_true',
                     help='Re-geocode from Excel before mapping. Use --input to specify a non-default Excel file.')
 parser.add_argument('--input', metavar='FILE',
                     help='With --geocode: Excel file to geocode. Without: geocoded CSV to map from.')
+parser.add_argument('--html', action='store_true',
+                    help='Also output an interactive HTML map with draggable street labels.')
 args = parser.parse_args()
 
 def run_geocode_pipeline(excel_path):
@@ -100,3 +103,5 @@ gdf_all, gdf_lines = build_route_geodataframes(geocoded_df, G)
 print(f"Route GeoDataFrames: {len(gdf_all)} points, {len(gdf_lines)} segments")
 plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads, save_path=AUDIT_MAP)
 plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf, save_path=AUDIT_MAP_OSM)
+if args.html:
+    plot_walk_audit_map_html(gdf_all, gdf_lines, save_path=AUDIT_MAP_HTML)

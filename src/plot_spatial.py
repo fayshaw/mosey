@@ -345,3 +345,98 @@ def plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf,
         plt.savefig(save_path, dpi=dpi, bbox_inches='tight', facecolor='white')
         print(f"Saved {save_path}")
     return fig, ax
+
+
+def plot_walk_audit_map_html(gdf_all, gdf_lines, save_path=None):
+    """
+    Interactive Folium/Leaflet HTML map of walk audit ratings.
+
+    Route segments are drawn as colored polylines. Street name labels are
+    rendered as draggable markers so the user can reposition them in the
+    browser before screenshotting.
+
+    Parameters
+    ----------
+    gdf_all   : GeoDataFrame of intersection points (output of build_route_geodataframes)
+    gdf_lines : GeoDataFrame of route LineStrings  (output of build_route_geodataframes)
+    save_path : optional path to write the HTML file
+    """
+    import folium
+    import pandas as pd
+    from src.constants import RATING_COLOR, AUDIT_OVERALL_Q
+
+    gdf_lines_wgs = gdf_lines.to_crs("EPSG:4326")
+
+    center = [42.4259, -71.0662]
+    m = folium.Map(location=center, zoom_start=14, tiles="CartoDB positron")
+
+    def _polyline_coords(geom):
+        """Return list-of-lists of (lat, lon) for LineString or MultiLineString."""
+        from shapely.geometry import MultiLineString
+        parts = geom.geoms if isinstance(geom, MultiLineString) else [geom]
+        return [[(y, x) for x, y in part.coords] for part in parts]
+
+    # Colored route segments
+    for _, row in gdf_lines_wgs.iterrows():
+        if row["geometry"] is None or row["geometry"].is_empty:
+            continue
+        rating = row.get(AUDIT_OVERALL_Q)
+        color  = RATING_COLOR.get(rating, "gray")
+        tooltip = f"{row.get('along', '')} — {rating}"
+        for coords in _polyline_coords(row["geometry"]):
+            folium.PolyLine(
+                locations=coords,
+                color=color,
+                weight=6,
+                opacity=0.85,
+                tooltip=tooltip,
+            ).add_to(m)
+
+    # Draggable street name labels at segment midpoints
+    street_labels = {}
+    for _, row in gdf_lines_wgs.iterrows():
+        street = row.get("along")
+        if pd.notnull(street) and street not in street_labels:
+            midpoint = row["geometry"].interpolate(0.5, normalized=True)
+            rating   = row.get(AUDIT_OVERALL_Q)
+            street_labels[street] = (midpoint, RATING_COLOR.get(rating, "gray"))
+
+    for street, (point, color) in street_labels.items():
+        if point.is_empty:
+            continue
+        label = street.title()
+        width = len(label) * 7 + 16
+        folium.Marker(
+            location=[point.y, point.x],
+            icon=folium.DivIcon(
+                html=(
+                    f'<div style="background:lightyellow;border:1.5px solid black;'
+                    f'border-radius:4px;padding:2px 6px;font-size:11px;'
+                    f'font-weight:bold;white-space:nowrap;cursor:move;">'
+                    f"{label}</div>"
+                ),
+                icon_size=(width, 22),
+                icon_anchor=(width // 2, 11),
+            ),
+            draggable=True,
+            tooltip=label,
+        ).add_to(m)
+
+    # Legend
+    legend_items = "".join(
+        f'<span style="background:{c};display:inline-block;width:14px;height:14px;'
+        f'margin-right:6px;border-radius:2px;vertical-align:middle;"></span>{r}<br>'
+        for r, c in RATING_COLOR.items()
+    )
+    legend_html = (
+        '<div style="position:fixed;bottom:30px;right:30px;z-index:1000;'
+        'background:white;padding:10px 14px;border:2px solid gray;'
+        'border-radius:6px;font-size:13px;font-family:sans-serif;">'
+        f"<b>Walk Audit Rating</b><br>{legend_items}</div>"
+    )
+    m.get_root().html.add_child(folium.Element(legend_html))
+
+    if save_path:
+        m.save(str(save_path))
+        print(f"Saved {save_path}")
+    return m
