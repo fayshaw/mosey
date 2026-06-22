@@ -3,9 +3,10 @@ Run the full walk audit pipeline:
   load → clean → parse → geocode → route → visualize → save
 
 Usage:
-  python walk_audit_cli.py                      # map from existing geocoded CSV
-  python walk_audit_cli.py --geocode            # re-geocode from Excel, then map
-  python walk_audit_cli.py --input path/to/file # map from a specific CSV
+  python walk_audit_cli.py                          # map from existing geocoded CSV
+  python walk_audit_cli.py --geocode                # re-geocode from Excel, then map
+  python walk_audit_cli.py --input path/to/file     # map from a specific CSV
+  python walk_audit_cli.py --input path/to/file.xlsx  # geocode from Excel, then map
 
 Outputs:
   output/walk_audit_geocoded.csv   — geocoded intersection data
@@ -47,8 +48,8 @@ parser.add_argument('--input', metavar='CSV',
                     help='Use a specific geocoded CSV instead of the default')
 args = parser.parse_args()
 
-if args.geocode:
-    raw_df = load_walk_audit_excel(AUDIT_RAW)
+def run_geocode_pipeline(excel_path):
+    raw_df = load_walk_audit_excel(excel_path)
     print(f"Loaded raw data: {raw_df.shape}")
 
     clean_df = clean_walk_audit(raw_df)
@@ -69,8 +70,15 @@ if args.geocode:
     geocoded_df.to_csv(AUDIT_GEO, index=False)
     print(f"Saved {AUDIT_GEO} ({len(geocoded_df)} rows)")
 
-if args.input:
-    map_input = args.input
+input_path = Path(args.input) if args.input else None
+
+if args.geocode:
+    run_geocode_pipeline(AUDIT_RAW)
+elif input_path and input_path.suffix.lower() == '.xlsx':
+    run_geocode_pipeline(input_path)
+
+if input_path and input_path.suffix.lower() != '.xlsx':
+    map_input = input_path
 elif AUDIT_GEO_FIX.exists():
     map_input = AUDIT_GEO_FIX
 else:
@@ -78,7 +86,8 @@ else:
 print(f"Using {map_input} for mapping")
 geocoded_df = pd.read_csv(map_input)
 
-raw_df = load_walk_audit_excel(AUDIT_RAW)
+excel_source = input_path if (input_path and input_path.suffix.lower() == '.xlsx') else AUDIT_RAW
+raw_df = load_walk_audit_excel(excel_source)
 walk_audit_summary(raw_df, geocoded_df)
 
 ward_counts = geocoded_df[AUDIT_WARD_Q].value_counts()
