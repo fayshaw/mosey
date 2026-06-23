@@ -187,7 +187,6 @@ def plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads,
     figsize     : figure size tuple
     dpi         : resolution for both rendering and saving
     """
-    import math
     import pandas as pd
     from src.constants import RATING_COLOR, AUDIT_OVERALL_Q
 
@@ -210,40 +209,26 @@ def plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads,
         if not subset.empty:
             subset.plot(ax=ax, color=color, markersize=35, alpha=0.8, label=rating)
 
-    # Direction-aware street labels: one per street name, placed at segment midpoint.
-    # Labels on roughly horizontal segments are nudged slightly downward to clear the line.
     street_labels = {}
     for _, row in gdf_lines.iterrows():
         street = row.get('along')
         if pd.notnull(street) and street not in street_labels:
             midpoint = row['geometry'].interpolate(0.5, normalized=True)
-            street_labels[street] = (midpoint, row['geometry'])
+            street_labels[street] = midpoint
 
-    offset_pct = 0.02
-    for street, (point, geom) in street_labels.items():
+    from adjustText import adjust_text
+    texts = []
+    for street, point in street_labels.items():
         if point.is_empty:
             continue
-        p1 = geom.interpolate(0.49, normalized=True)
-        p2 = geom.interpolate(0.51, normalized=True)
-        if p1.is_empty or p2.is_empty or (p1.x == p2.x and p1.y == p2.y):
-            angle = 0.0
-        else:
-            angle = math.degrees(math.atan2(p2.y - p1.y, p2.x - p1.x))
-        angle_norm = angle % 180
+        texts.append(ax.text(
+            point.x, point.y, street.title(),
+            fontsize=9, ha='center', va='center', fontweight='bold',
+            bbox=dict(boxstyle='round,pad=0.5', facecolor='lightyellow',
+                      edgecolor='black', alpha=0.85, linewidth=1)))
 
-        if 45 < angle_norm < 135:
-            # Roughly vertical street — label at midpoint, no offset needed
-            label_x, label_y = point.x, point.y
-        else:
-            # Roughly horizontal street — nudge label slightly below the line
-            v_offset = -((ax.get_ylim()[1] - ax.get_ylim()[0]) * offset_pct)
-            label_x  = point.x
-            label_y  = point.y + v_offset
-
-        ax.text(label_x, label_y, street.title(),
-                fontsize=9, ha='center', va='center', fontweight='bold',
-                bbox=dict(boxstyle='round,pad=0.5', facecolor='lightyellow',
-                          edgecolor='black', alpha=0.85, linewidth=1))
+    adjust_text(texts, ax=ax, force_text=(0.5, 0.5), force_points=(0.3, 0.3),
+                expand=(1.4, 1.4), ensure_inside_axes=True)
 
     ax.set_title('Walk Audit Ratings in Malden', fontsize=16)
     ax.legend(title='Rating', fontsize=12, loc='upper right')
@@ -274,7 +259,6 @@ def plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf,
     dpi         : resolution (lower than static map — tiles add their own detail)
     tile_source : contextily tile provider; defaults to CartoDB Positron
     """
-    import math
     import contextily as ctx
     import pandas as pd
     from src.constants import RATING_COLOR, AUDIT_OVERALL_Q
@@ -308,31 +292,21 @@ def plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf,
         street = row.get('along')
         if pd.notnull(street) and street not in street_labels:
             midpoint = row['geometry'].interpolate(0.5, normalized=True)
-            street_labels[street] = (midpoint, row['geometry'])
+            street_labels[street] = midpoint
 
-    offset_pct = 0.02
-    for street, (point, geom) in street_labels.items():
+    from adjustText import adjust_text
+    texts = []
+    for street, point in street_labels.items():
         if point.is_empty:
             continue
-        p1 = geom.interpolate(0.49, normalized=True)
-        p2 = geom.interpolate(0.51, normalized=True)
-        if p1.is_empty or p2.is_empty or (p1.x == p2.x and p1.y == p2.y):
-            angle = 0.0
-        else:
-            angle = math.degrees(math.atan2(p2.y - p1.y, p2.x - p1.x))
-        angle_norm = angle % 180
+        texts.append(ax.text(
+            point.x, point.y, street.title(),
+            fontsize=9, ha='center', va='center', fontweight='bold',
+            bbox=dict(boxstyle='round,pad=0.5', facecolor='lightyellow',
+                      edgecolor='black', alpha=0.85, linewidth=1)))
 
-        if 45 < angle_norm < 135:
-            label_x, label_y = point.x, point.y
-        else:
-            v_offset = -((ax.get_ylim()[1] - ax.get_ylim()[0]) * offset_pct)
-            label_x  = point.x
-            label_y  = point.y + v_offset
-
-        ax.text(label_x, label_y, street.title(),
-                fontsize=9, ha='center', va='center', fontweight='bold',
-                bbox=dict(boxstyle='round,pad=0.5', facecolor='lightyellow',
-                          edgecolor='black', alpha=0.85, linewidth=1))
+    adjust_text(texts, ax=ax, force_text=(0.5, 0.5), force_points=(0.3, 0.3),
+                expand=(1.4, 1.4), ensure_inside_axes=True)
 
     source = tile_source or ctx.providers.CartoDB.Positron
     ctx.add_basemap(ax, source=source)
