@@ -313,7 +313,7 @@ def plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf,
 
     ax.set_axis_off()
     ax.set_title('Walk Audit Ratings in Malden', fontsize=16, pad=12)
-    ax.legend(title='Rating', fontsize=12, loc='upper right')
+    ax.legend(title='Rating', fontsize=16, loc='upper right')
     plt.tight_layout()
     if save_path:
         plt.savefig(save_path, dpi=dpi, bbox_inches='tight', facecolor='white')
@@ -395,9 +395,10 @@ def plot_walk_audit_map_html(gdf_all, gdf_lines, malden_gdf=None, save_path=None
             location=[point.y, point.x],
             icon=folium.DivIcon(
                 html=(
-                    f'<div style="background:lightyellow;border:1.5px solid black;'
-                    f'border-radius:4px;padding:2px 6px;font-size:11px;'
-                    f'font-weight:bold;white-space:nowrap;cursor:move;">'
+                    f'<div class="audit-label" style="background:lightyellow;'
+                    f'border:1.5px solid black;border-radius:4px;padding:2px 6px;'
+                    f'font-size:11px;font-weight:bold;white-space:nowrap;'
+                    f'cursor:move;transform-origin:center center;">'
                     f"{label}</div>"
                 ),
                 icon_size=(width, 22),
@@ -406,6 +407,21 @@ def plot_walk_audit_map_html(gdf_all, gdf_lines, malden_gdf=None, save_path=None
             draggable=True,
             tooltip=label,
         ).add_to(m)
+
+    map_var = m.get_name()
+    base_zoom = 14
+    zoom_scale_js = f"""
+    <script>
+    {map_var}.on('zoomend', function() {{
+        var scale = Math.pow(2, {map_var}.getZoom() - {base_zoom});
+        scale = Math.max(0.3, Math.min(scale, 1.0));
+        document.querySelectorAll('.audit-label').forEach(function(el) {{
+            el.style.transform = 'scale(' + scale + ')';
+        }});
+    }});
+    </script>
+    """
+    m.get_root().html.add_child(folium.Element(zoom_scale_js))
 
     # Legend
     legend_items = "".join(
