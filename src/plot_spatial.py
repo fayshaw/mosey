@@ -347,7 +347,7 @@ def plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf,
     return fig, ax
 
 
-def plot_walk_audit_map_html(gdf_all, gdf_lines, save_path=None):
+def plot_walk_audit_map_html(gdf_all, gdf_lines, malden_gdf=None, save_path=None):
     """
     Interactive Folium/Leaflet HTML map of walk audit ratings.
 
@@ -357,9 +357,10 @@ def plot_walk_audit_map_html(gdf_all, gdf_lines, save_path=None):
 
     Parameters
     ----------
-    gdf_all   : GeoDataFrame of intersection points (output of build_route_geodataframes)
-    gdf_lines : GeoDataFrame of route LineStrings  (output of build_route_geodataframes)
-    save_path : optional path to write the HTML file
+    gdf_all    : GeoDataFrame of intersection points (output of build_route_geodataframes)
+    gdf_lines  : GeoDataFrame of route LineStrings  (output of build_route_geodataframes)
+    malden_gdf : optional GeoDataFrame of Malden boundary
+    save_path  : optional path to write the HTML file
     """
     import folium
     import pandas as pd
@@ -369,6 +370,16 @@ def plot_walk_audit_map_html(gdf_all, gdf_lines, save_path=None):
 
     center = [42.4259, -71.0662]
     m = folium.Map(location=center, zoom_start=14, tiles="CartoDB positron")
+
+    if malden_gdf is not None:
+        folium.GeoJson(
+            malden_gdf.to_crs("EPSG:4326").__geo_interface__,
+            style_function=lambda _: {
+                "fillColor": "none",
+                "color": "black",
+                "weight": 2,
+            },
+        ).add_to(m)
 
     def _polyline_coords(geom):
         """Return list-of-lists of (lat, lon) for LineString or MultiLineString."""

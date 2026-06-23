@@ -297,10 +297,6 @@ def build_route_geodataframes(geocoded_df, G, malden_boundary=None,
       gdf_all   — one point per intersection endpoint (begin + end)
       gdf_lines — one road-network route LineString per audit segment
 
-    geocoded_df must be structured with begin-endpoint rows first and
-    end-endpoint rows second (as produced by geocode_intersections called on
-    the output of build_intersection_strings).
-
     G is the OSMnx road network graph in EPSG:4326.
     Both returned GeoDataFrames are projected to target_crs.
 
@@ -318,9 +314,12 @@ def build_route_geodataframes(geocoded_df, G, malden_boundary=None,
         gdf_all = filter_to_malden_geo(gdf_all, malden_boundary, keep_geometry=True)
         print(f"After filtering: {len(gdf_all)} intersection points in Malden")
 
-    num_audits = len(geocoded_df) // 2
-    begin_pts = geocoded_df.iloc[:num_audits].reset_index(drop=True)
-    end_pts   = geocoded_df.iloc[num_audits:].reset_index(drop=True)
+    sort_cols = ['along', 'begin', 'end']
+    begin_pts = (geocoded_df[geocoded_df['endpoint'] == 'begin']
+                 .sort_values(sort_cols).reset_index(drop=True))
+    end_pts   = (geocoded_df[geocoded_df['endpoint'] == 'end']
+                 .sort_values(sort_cols).reset_index(drop=True))
+    num_audits = len(begin_pts)
 
     lines = []
     for i in range(num_audits):
