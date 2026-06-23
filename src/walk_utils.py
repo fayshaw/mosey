@@ -184,6 +184,39 @@ def build_intersection_strings(parsed_df):
     return pd.concat([begin, inc_begin, end, inc_end], axis=0).reset_index(drop=True)
 
 
+def flag_outside_malden(df):
+    """
+    Check geocoded points against the Malden boundary (+ 100m buffer).
+    Any 'success' rows outside Malden get status changed to 'outside_malden'
+    and lat/lon set to None.
+    """
+    from src.load_data import load_malden_boundary
+
+    has_coords = df['geocoding_status'] == 'success'
+    success = df[has_coords].copy()
+    if success.empty:
+        return df
+
+    malden_gdf = load_malden_boundary()
+    pts = gpd.GeoDataFrame(
+        success,
+        geometry=gpd.points_from_xy(success['lon'], success['lat']),
+        crs=CRS_WGS84,
+    ).to_crs(malden_gdf.crs)
+    malden_buffered = malden_gdf.copy()
+    malden_buffered['geometry'] = malden_gdf.buffer(100)
+    inside = gpd.sjoin(pts, malden_buffered[['geometry']], predicate='within')
+    outside_idx = success.index.difference(inside.index)
+    for idx in outside_idx:
+        row = df.loc[idx]
+        print(f"  WARNING: {row['intersection']} geocoded outside Malden "
+              f"({row['lat']:.4f}, {row['lon']:.4f}) — marking outside_malden")
+        df.loc[idx, 'geocoding_status'] = 'outside_malden'
+        df.loc[idx, ['lat', 'lon']] = None
+
+    return df
+
+
 def geocode_intersections(intersections_df, api_key=None):
     """
     Geocode every row's 'intersection' string using the Geocodio API.
@@ -207,7 +240,9 @@ def geocode_intersections(intersections_df, api_key=None):
             time.sleep(0.2)  # stay within Geocodio's rate limit
 
     geocoded = pd.DataFrame(results)
-    return pd.concat([intersections_df.reset_index(drop=True), geocoded], axis=1)
+    combined = pd.concat([intersections_df.reset_index(drop=True), geocoded], axis=1)
+
+    return flag_outside_malden(combined)
 
 
 def add_rating_colors(walk_df, rating_col=None):

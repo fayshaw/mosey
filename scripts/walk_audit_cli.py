@@ -34,6 +34,7 @@ from src.walk_utils import (
     build_intersection_strings,
     build_route_geodataframes,
     clean_walk_audit,
+    flag_outside_malden,
     geocode_intersections,
     parse_all_segments,
     walk_audit_summary,
@@ -86,7 +87,7 @@ elif AUDIT_GEO_FIX.exists():
 else:
     map_input = AUDIT_GEO
 print(f"Using {map_input} for mapping")
-geocoded_df = pd.read_csv(map_input)
+geocoded_df = flag_outside_malden(pd.read_csv(map_input))
 
 excel_source = input_path if (args.geocode and input_path) else AUDIT_RAW
 raw_df = load_walk_audit_excel(excel_source)
