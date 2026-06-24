@@ -387,3 +387,54 @@ def build_route_geodataframes(geocoded_df, G, malden_boundary=None,
         print(f"After filtering: {len(gdf_lines)} route segments in Malden")
 
     return gdf_all, gdf_lines
+
+
+def _normalize_timestamp(ts_series):
+    """Parse timestamps and truncate to second precision for matching."""
+    return pd.to_datetime(ts_series).dt.floor('s')
+
+
+def merge_into_database(new_df, db_path):
+    """
+    Merge new geocoded rows into the walk audit database CSV.
+
+    If db_path does not exist, writes new_df as the initial database.
+    If it exists, appends only rows whose (Timestamp, endpoint) pair is
+    not already in the database. Existing rows are never overwritten,
+    so manual lat/lon fixes persist.
+
+    Returns the merged DataFrame.
+    """
+    from pathlib import Path
+    db_path = Path(db_path)
+
+    if new_df.empty and db_path.exists():
+        return pd.read_csv(db_path)
+
+    if not db_path.exists():
+        new_df.to_csv(db_path, index=False)
+        print(f"Created {db_path} ({len(new_df)} rows)")
+        return new_df
+
+    existing = pd.read_csv(db_path)
+
+    existing_keys = set(zip(
+        _normalize_timestamp(existing['Timestamp']),
+        existing['endpoint'],
+    ))
+
+    new_ts = _normalize_timestamp(new_df['Timestamp'])
+    is_new = [
+        (ts, ep) not in existing_keys
+        for ts, ep in zip(new_ts, new_df['endpoint'])
+    ]
+    to_add = new_df[is_new]
+
+    if to_add.empty:
+        print("No new rows to add")
+        return existing
+
+    merged = pd.concat([existing, to_add], ignore_index=True)
+    merged.to_csv(db_path, index=False)
+    print(f"Added {len(to_add)} new rows to {db_path} ({len(merged)} total)")
+    return merged
