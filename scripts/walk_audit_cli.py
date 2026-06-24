@@ -24,7 +24,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from src.constants import (AUDIT_RAW, AUDIT_OVERALL_Q, AUDIT_WARD_Q,
-                           AUDIT_GEO, AUDIT_GEO_FIX, AUDIT_WARD_COUNTS,
+                           AUDIT_GEO, AUDIT_DB, AUDIT_WARD_COUNTS,
                            AUDIT_MAP, AUDIT_MAP_OSM, AUDIT_MAP_HTML)
 from src.load_data import load_malden_boundary, load_malden_roads, load_walk_audit_excel
 from src.plot_spatial import plot_walk_audit_map, plot_walk_audit_map_osm, plot_walk_audit_map_html
@@ -82,8 +82,8 @@ if args.geocode:
     map_input = AUDIT_GEO
 elif input_path:
     map_input = input_path
-elif AUDIT_GEO_FIX.exists():
-    map_input = AUDIT_GEO_FIX
+elif AUDIT_DB.exists():
+    map_input = AUDIT_DB
 else:
     map_input = AUDIT_GEO
 print(f"Using {map_input} for mapping")
