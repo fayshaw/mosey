@@ -1,18 +1,28 @@
 """
-Run the full walk audit pipeline:
-  load → clean → parse → geocode → route → visualize → save
+Walk audit pipeline: geocode → review/fix → merge into database → map.
 
 Usage:
-  python walk_audit_cli.py                                      # map from existing geocoded CSV
-  python walk_audit_cli.py --geocode                            # re-geocode from default Excel, then map
-  python walk_audit_cli.py --geocode --input path/to/file.xlsx # re-geocode from specific Excel, then map
-  python walk_audit_cli.py --input path/to/file.csv            # map from a specific geocoded CSV
+  python walk_audit_cli.py                                       # map from walk_audit_database.csv (default)
+  python walk_audit_cli.py --geocode                             # geocode from default Excel → staging CSV, then map
+  python walk_audit_cli.py --geocode --input path/to/file.xlsx   # geocode from specific Excel → staging CSV, then map
+  python walk_audit_cli.py --input path/to/file.csv              # map from a specific geocoded CSV
+  python walk_audit_cli.py --html                                # also output interactive HTML map
+
+Workflow for new data:
+  1. python walk_audit_cli.py --geocode --input walk_audit_20260623.xlsx
+     → writes output/audit_geocoded.csv (staging file, review and fix lat/lon here)
+  2. Manually fix any rows with geocoding_status=needs_manual in the staging CSV
+  3. python walk_audit_cli.py --merge
+     → merges new rows from staging into output/walk_audit_database.csv
+  4. python walk_audit_cli.py
+     → maps from the database
 
 Outputs:
-  output/audit_geocoded.csv     — geocoded intersection data
-  output/walk_audit_map.png     — walk audit ratings map (road-network style)
-  output/walk_audit_map_osm.png — walk audit ratings map (OSM tile basemap)
-  output/walk_audit_map.html    — interactive map with draggable labels (--html only)
+  output/audit_geocoded.csv        — staging file from geocoding (may need manual fixes)
+  output/walk_audit_database.csv   — single source of truth (manual fixes persist across updates)
+  output/walk_audit_map.png        — walk audit ratings map (road-network style)
+  output/walk_audit_map_osm.png    — walk audit ratings map (OSM tile basemap)
+  output/walk_audit_map.html       — interactive map with draggable labels (--html only)
 """
 import argparse
 import sys
