@@ -9,6 +9,8 @@ Usage:
   python walk_audit_cli.py --html                                # also output interactive HTML map
 
 Workflow for new data:
+  0. Before running anything, check to see that raw Excel file has complete along, begin, and end streets.
+     Check the comments to see what those streets might be.
   1. python walk_audit_cli.py --geocode --input walk_audit_20260623.xlsx
      → writes output/audit_geocoded.csv (staging file, review and fix lat/lon here)
   2. Manually fix any rows with geocoding_status=needs_manual in the staging CSV
@@ -33,7 +35,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pandas as pd
 from dotenv import load_dotenv
 
-from src.constants import (AUDIT_RAW, AUDIT_OVERALL_Q, AUDIT_WARD_Q,
+from src.constants import (AUDIT_RAW, AUDIT_CLEAN,
+                           AUDIT_OVERALL_Q, AUDIT_WARD_Q,
                            AUDIT_GEO, AUDIT_DB, AUDIT_WARD_COUNTS,
                            AUDIT_MAP, AUDIT_MAP_OSM, AUDIT_MAP_HTML)
 from src.load_data import load_malden_boundary, load_malden_roads, load_walk_audit_excel
@@ -46,6 +49,7 @@ from src.walk_utils import (
     clean_walk_audit,
     flag_outside_malden,
     geocode_intersections,
+    merge_into_database,
     parse_all_segments,
     walk_audit_summary,
 )
@@ -55,21 +59,26 @@ load_dotenv()
 
 parser = argparse.ArgumentParser(description="Walk audit map pipeline")
 parser.add_argument('--geocode', action='store_true',
-                    help='Re-geocode from Excel before mapping. Use --input to specify a non-default Excel file.')
+                    help='Geocode from Excel → staging CSV. Without --merge, stops after geocoding so you can review.')
+parser.add_argument('--merge', action='store_true',
+                    help='Merge staging CSV into the database. Can combine with --geocode to geocode and merge in one step.')
 parser.add_argument('--input', metavar='FILE',
-                    help='With --geocode: Excel file to geocode. Without: geocoded CSV to map from.')
+                    help='With --geocode: Excel file to geocode. With --merge: CSV to merge. Without either: CSV to map from.')
 parser.add_argument('--html', action='store_true',
                     help='Also output an interactive HTML map with draggable street labels.')
 args = parser.parse_args()
 
-def run_geocode_pipeline(excel_path):
-    raw_df = load_walk_audit_excel(excel_path)
+
+def run_geocode_pipeline(clean_path, geocode_path):
+    raw_df = load_walk_audit_excel(geocode_path)
     print(f"Loaded raw data: {raw_df.shape}")
 
     clean_df = clean_walk_audit(raw_df)
+    # clean_df.to_csv('walk_audit_clean.csv', index=False)
+    clean_df.sort_values(by=['Timestamp']).to_csv(clean_path, index=False)
     print(f"Cleaned data:    {clean_df.shape}")
 
-    parsed_df = parse_all_segments(clean_df)
+gt    parsed_df = parse_all_segments(clean_df)
     complete  = parsed_df['is_complete'].sum()
     print(f"Parsed segments: {len(parsed_df)} rows, {complete} complete")
 
@@ -81,21 +90,40 @@ def run_geocode_pipeline(excel_path):
     print(f"Geocoded: {success}/{len(geocoded_df)} successful")
 
     geocoded_df = add_rating_colors(geocoded_df, rating_col=AUDIT_OVERALL_Q)
+    geocoded_df.sort_values(by=['Timestamp'])
     geocoded_df.to_csv(AUDIT_GEO, index=False)
-    print(f"Saved {AUDIT_GEO} ({len(geocoded_df)} rows)")
+    print(f"Saved staging file {AUDIT_GEO} ({len(geocoded_df)} rows)")
+    return geocoded_df
+
 
 input_path = Path(args.input) if args.input else None
 
+# --- Geocode step ---
 if args.geocode:
+    clean_path = AUDIT_CLEAN
     excel_source = input_path if input_path else AUDIT_RAW
-    run_geocode_pipeline(excel_source)
-    map_input = AUDIT_GEO
-elif input_path:
+    run_geocode_pipeline(clean_path, excel_source)
+    if not args.merge:
+        print(f"\nReview {AUDIT_GEO} and fix any rows, then run --merge to update the database.")
+        sys.exit(0)
+
+# --- Merge step ---
+if args.merge:
+    staging_path = input_path if (input_path and not args.geocode) else AUDIT_GEO
+    if not Path(staging_path).exists():
+        print(f"Error: staging file {staging_path} not found. Run --geocode first.")
+        sys.exit(1)
+    staging_df = pd.read_csv(staging_path)
+    merge_into_database(staging_df, AUDIT_DB)
+
+# --- Determine mapping source ---
+if input_path and not args.geocode and not args.merge:
     map_input = input_path
 elif AUDIT_DB.exists():
     map_input = AUDIT_DB
 else:
     map_input = AUDIT_GEO
+
 print(f"Using {map_input} for mapping")
 geocoded_df = flag_outside_malden(pd.read_csv(map_input))
 
