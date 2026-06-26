@@ -598,28 +598,16 @@ def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None,
             if geom is None or geom.is_empty:
                 continue
             tooltip = f"{line_row.get('along', '')} — {rating}"
-            for coords in _polyline_coords(geom):
+            popup  = folium.Popup(_popup_html(survey_row), max_width=300)
+            for i, coords in enumerate(_polyline_coords(geom)):
                 folium.PolyLine(
                     locations=coords,
                     color=color,
                     weight=5,
                     opacity=0.8,
                     tooltip=tooltip,
+                    popup=popup if i == 0 else None,
                 ).add_to(group)
-
-            # CircleMarker at the start of the routed line
-            start_coord = _polyline_coords(geom)[0][0]
-            folium.CircleMarker(
-                location=start_coord,
-                radius=8,
-                color='black',
-                weight=1,
-                fill=True,
-                fill_color=color,
-                fill_opacity=0.9,
-                popup=folium.Popup(_popup_html(survey_row), max_width=300),
-                tooltip=tooltip,
-            ).add_to(group)
 
     else:
         # Fallback: straight lines between geocoded begin/end points
@@ -641,19 +629,8 @@ def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None,
                         weight=5,
                         opacity=0.8,
                         tooltip=f"{b_row.get('along', '')} — {rating}",
+                        popup=folium.Popup(_popup_html(b_row), max_width=300),
                     ).add_to(group)
-
-            folium.CircleMarker(
-                location=[b_lat, b_lon],
-                radius=8,
-                color='black',
-                weight=1,
-                fill=True,
-                fill_color=color,
-                fill_opacity=0.9,
-                popup=folium.Popup(_popup_html(b_row), max_width=300),
-                tooltip=f"{b_row.get('along', '')} — {rating}",
-            ).add_to(group)
 
     folium.LayerControl(collapsed=False).add_to(m)
 
