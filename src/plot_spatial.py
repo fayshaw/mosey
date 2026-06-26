@@ -443,15 +443,19 @@ def plot_walk_audit_map_html(gdf_all, gdf_lines, malden_gdf=None, save_path=None
     return m
 
 
-def plot_walk_audit_folium(geocoded_df, malden_gdf=None, ward=None, save_path=None):
+def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None, ward=None, save_path=None):
     """
-    Interactive Folium map built directly from the geocoded CSV — no road network needed.
-    Route segments are straight lines from begin to end point.
+    Interactive Folium map of walk audit data with per-audit popups.
+
+    When gdf_lines is provided, routes follow real roads (road-snapped MultiLineStrings
+    from build_route_geodataframes). Without it, routes are straight lines between
+    begin/end geocoded points.
 
     Parameters
     ----------
     geocoded_df : DataFrame from walk_audit_database.csv or audit_geocoded.csv
     malden_gdf  : optional GeoDataFrame of Malden boundary
+    gdf_lines   : optional GeoDataFrame from build_route_geodataframes (road-snapped routes)
     ward        : optional int ward number to filter to (e.g. 5 shows only Ward 5)
     save_path   : optional path to write the HTML file
     """
@@ -524,6 +528,9 @@ def plot_walk_audit_folium(geocoded_df, malden_gdf=None, ward=None, save_path=No
     begin_df = df[df['endpoint'] == 'begin'].dropna(subset=['lat', 'lon'])
     end_df   = df[df['endpoint'] == 'end']
 
+    # Build a Timestamp → survey-row lookup for popup data
+    survey_by_ts = begin_df.set_index('Timestamp')
+
     if ward is not None and len(begin_df) > 0:
         center = [begin_df['lat'].mean(), begin_df['lon'].mean()]
         zoom   = 15
@@ -544,37 +551,89 @@ def plot_walk_audit_folium(geocoded_df, malden_gdf=None, ward=None, save_path=No
     for g in rating_groups.values():
         g.add_to(m)
 
-    for _, b_row in begin_df.iterrows():
-        ts     = b_row.get('Timestamp')
-        rating = str(b_row.get(AUDIT_OVERALL_Q, ''))
-        color  = RATING_COLOR.get(rating, 'gray')
-        group  = rating_groups.get(rating, rating_groups['Unknown'])
-        b_lat, b_lon = float(b_row['lat']), float(b_row['lon'])
+    def _polyline_coords(geom):
+        from shapely.geometry import MultiLineString
+        parts = geom.geoms if isinstance(geom, MultiLineString) else [geom]
+        return [[(y, x) for x, y in part.coords] for part in parts]
 
-        e_match = end_df[end_df['Timestamp'] == ts]
-        if len(e_match) > 0:
-            e_row = e_match.iloc[0]
-            e_lat, e_lon = e_row.get('lat'), e_row.get('lon')
-            if pd.notna(e_lat) and pd.notna(e_lon):
+    if gdf_lines is not None:
+        # Road-snapped routes: join gdf_lines to survey data via Timestamp
+        lines_wgs = gdf_lines.to_crs("EPSG:4326")
+        for _, line_row in lines_wgs.iterrows():
+            ts     = line_row.get('Timestamp')
+            rating = str(line_row.get(AUDIT_OVERALL_Q, ''))
+            color  = RATING_COLOR.get(rating, 'gray')
+            group  = rating_groups.get(rating, rating_groups['Unknown'])
+
+            # Skip routes not in the current ward filter
+            if ts not in survey_by_ts.index:
+                continue
+
+            survey_row = survey_by_ts.loc[ts]
+            # loc returns a DataFrame when there are duplicate Timestamps; take first
+            if isinstance(survey_row, pd.DataFrame):
+                survey_row = survey_row.iloc[0]
+
+            geom = line_row.get('geometry')
+            if geom is None or geom.is_empty:
+                continue
+            tooltip = f"{line_row.get('along', '')} — {rating}"
+            for coords in _polyline_coords(geom):
                 folium.PolyLine(
-                    locations=[(b_lat, b_lon), (float(e_lat), float(e_lon))],
+                    locations=coords,
                     color=color,
                     weight=5,
                     opacity=0.8,
-                    tooltip=f"{b_row.get('along', '')} — {rating}",
+                    tooltip=tooltip,
                 ).add_to(group)
 
-        folium.CircleMarker(
-            location=[b_lat, b_lon],
-            radius=8,
-            color='black',
-            weight=1,
-            fill=True,
-            fill_color=color,
-            fill_opacity=0.9,
-            popup=folium.Popup(_popup_html(b_row), max_width=300),
-            tooltip=f"{b_row.get('along', '')} — {rating}",
-        ).add_to(group)
+            # CircleMarker at the start of the routed line
+            start_coord = _polyline_coords(geom)[0][0]
+            folium.CircleMarker(
+                location=start_coord,
+                radius=8,
+                color='black',
+                weight=1,
+                fill=True,
+                fill_color=color,
+                fill_opacity=0.9,
+                popup=folium.Popup(_popup_html(survey_row), max_width=300),
+                tooltip=tooltip,
+            ).add_to(group)
+
+    else:
+        # Fallback: straight lines between geocoded begin/end points
+        for _, b_row in begin_df.iterrows():
+            ts     = b_row.get('Timestamp')
+            rating = str(b_row.get(AUDIT_OVERALL_Q, ''))
+            color  = RATING_COLOR.get(rating, 'gray')
+            group  = rating_groups.get(rating, rating_groups['Unknown'])
+            b_lat, b_lon = float(b_row['lat']), float(b_row['lon'])
+
+            e_match = end_df[end_df['Timestamp'] == ts]
+            if len(e_match) > 0:
+                e_row = e_match.iloc[0]
+                e_lat, e_lon = e_row.get('lat'), e_row.get('lon')
+                if pd.notna(e_lat) and pd.notna(e_lon):
+                    folium.PolyLine(
+                        locations=[(b_lat, b_lon), (float(e_lat), float(e_lon))],
+                        color=color,
+                        weight=5,
+                        opacity=0.8,
+                        tooltip=f"{b_row.get('along', '')} — {rating}",
+                    ).add_to(group)
+
+            folium.CircleMarker(
+                location=[b_lat, b_lon],
+                radius=8,
+                color='black',
+                weight=1,
+                fill=True,
+                fill_color=color,
+                fill_opacity=0.9,
+                popup=folium.Popup(_popup_html(b_row), max_width=300),
+                tooltip=f"{b_row.get('along', '')} — {rating}",
+            ).add_to(group)
 
     folium.LayerControl(collapsed=False).add_to(m)
 

@@ -151,4 +151,5 @@ plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf, save_path=AUDIT_MAP_OSM)
 if args.html:
     plot_walk_audit_map_html(gdf_all, gdf_lines, malden_gdf=malden_gdf, save_path=AUDIT_MAP_HTML)
 if args.folium:
-    plot_walk_audit_folium(geocoded_df, malden_gdf=malden_gdf, ward=args.ward, save_path=AUDIT_MAP_FOLIUM)
+    plot_walk_audit_folium(geocoded_df, malden_gdf=malden_gdf, gdf_lines=gdf_lines,
+                           ward=args.ward, save_path=AUDIT_MAP_FOLIUM)

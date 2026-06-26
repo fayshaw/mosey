@@ -374,6 +374,7 @@ def build_route_geodataframes(geocoded_df, G, malden_boundary=None,
                 'color':             start['color'],
                 'along':             start.get('along'),
                 'audit_id':          i,
+                'Timestamp':         start.get('Timestamp'),
             })
         except nx.NetworkXNoPath:
             print(f"No road path for audit {i} ({start.get('along', '?')}); skipping.")
