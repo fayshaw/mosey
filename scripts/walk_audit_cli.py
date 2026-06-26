@@ -40,7 +40,7 @@ from src.constants import (AUDIT_RAW, AUDIT_CLEAN,
                            AUDIT_OVERALL_Q, AUDIT_WARD_Q,
                            AUDIT_GEO, AUDIT_DB, AUDIT_WARD_COUNTS,
                            AUDIT_MAP, AUDIT_MAP_OSM, AUDIT_MAP_HTML, AUDIT_MAP_FOLIUM)
-from src.load_data import load_malden_boundary, load_malden_roads, load_walk_audit_excel
+from src.load_data import load_malden_boundary, load_malden_roads, load_malden_wards, load_walk_audit_excel
 from src.plot_spatial import (plot_walk_audit_map, plot_walk_audit_map_osm,
                                plot_walk_audit_map_html, plot_walk_audit_folium)
 from src.spatial_utils import get_malden_road_network
@@ -151,5 +151,6 @@ plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf, save_path=AUDIT_MAP_OSM)
 if args.html:
     plot_walk_audit_map_html(gdf_all, gdf_lines, malden_gdf=malden_gdf, save_path=AUDIT_MAP_HTML)
 if args.folium:
+    wards_gdf = load_malden_wards() if args.ward else None
     plot_walk_audit_folium(geocoded_df, malden_gdf=malden_gdf, gdf_lines=gdf_lines,
-                           ward=args.ward, save_path=AUDIT_MAP_FOLIUM)
+                           wards_gdf=wards_gdf, ward=args.ward, save_path=AUDIT_MAP_FOLIUM)

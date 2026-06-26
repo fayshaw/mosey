@@ -443,7 +443,8 @@ def plot_walk_audit_map_html(gdf_all, gdf_lines, malden_gdf=None, save_path=None
     return m
 
 
-def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None, ward=None, save_path=None):
+def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None,
+                           wards_gdf=None, ward=None, save_path=None):
     """
     Interactive Folium map of walk audit data with per-audit popups.
 
@@ -456,6 +457,7 @@ def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None, ward=No
     geocoded_df : DataFrame from walk_audit_database.csv or audit_geocoded.csv
     malden_gdf  : optional GeoDataFrame of Malden boundary
     gdf_lines   : optional GeoDataFrame from build_route_geodataframes (road-snapped routes)
+    wards_gdf   : optional GeoDataFrame of ward/precinct boundaries (from load_malden_wards)
     ward        : optional int ward number to filter to (e.g. 5 shows only Ward 5)
     save_path   : optional path to write the HTML file
     """
@@ -544,6 +546,24 @@ def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None, ward=No
         folium.GeoJson(
             malden_gdf.to_crs("EPSG:4326").__geo_interface__,
             style_function=lambda _: {"fillColor": "none", "color": "black", "weight": 2},
+        ).add_to(m)
+
+    if wards_gdf is not None and ward is not None:
+        ward_boundary = (
+            wards_gdf[wards_gdf['WARD'] == str(ward)]
+            .dissolve()
+            .to_crs("EPSG:4326")
+        )
+        folium.GeoJson(
+            ward_boundary.__geo_interface__,
+            style_function=lambda _: {
+                "fillColor": "#1a73e8",
+                "fillOpacity": 0.06,
+                "color": "#1a73e8",
+                "weight": 2.5,
+                "dashArray": "6, 4",
+            },
+            tooltip=f"Ward {ward}",
         ).add_to(m)
 
     rating_groups = {r: folium.FeatureGroup(name=r, show=True) for r in RATING_COLOR}
