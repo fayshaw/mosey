@@ -25,6 +25,7 @@ Outputs:
   output/walk_audit_map.png        — walk audit ratings map (road-network style)
   output/walk_audit_map_osm.png    — walk audit ratings map (OSM tile basemap)
   output/walk_audit_map.html       — interactive map with draggable labels (--html only)
+  output/walk_audit_folium.html    — simple interactive Folium map with popups (--folium only)
 """
 import argparse
 import sys
@@ -38,9 +39,10 @@ from dotenv import load_dotenv
 from src.constants import (AUDIT_RAW, AUDIT_CLEAN,
                            AUDIT_OVERALL_Q, AUDIT_WARD_Q,
                            AUDIT_GEO, AUDIT_DB, AUDIT_WARD_COUNTS,
-                           AUDIT_MAP, AUDIT_MAP_OSM, AUDIT_MAP_HTML)
+                           AUDIT_MAP, AUDIT_MAP_OSM, AUDIT_MAP_HTML, AUDIT_MAP_FOLIUM)
 from src.load_data import load_malden_boundary, load_malden_roads, load_walk_audit_excel
-from src.plot_spatial import plot_walk_audit_map, plot_walk_audit_map_osm, plot_walk_audit_map_html
+from src.plot_spatial import (plot_walk_audit_map, plot_walk_audit_map_osm,
+                               plot_walk_audit_map_html, plot_walk_audit_folium)
 from src.spatial_utils import get_malden_road_network
 from src.walk_utils import (
     add_rating_colors,
@@ -66,6 +68,10 @@ parser.add_argument('--input', metavar='FILE',
                     help='With --geocode: Excel file to geocode. With --merge: CSV to merge. Without either: CSV to map from.')
 parser.add_argument('--html', action='store_true',
                     help='Also output an interactive HTML map with draggable street labels.')
+parser.add_argument('--folium', action='store_true',
+                    help='Output a simple Folium HTML map with per-audit popups (no road network needed).')
+parser.add_argument('--ward', type=int, metavar='N',
+                    help='With --folium: filter to a single ward (e.g. --ward 5).')
 args = parser.parse_args()
 
 
@@ -78,7 +84,7 @@ def run_geocode_pipeline(clean_path, geocode_path):
     clean_df.sort_values(by=['Timestamp']).to_csv(clean_path, index=False)
     print(f"Cleaned data:    {clean_df.shape}")
 
-gt    parsed_df = parse_all_segments(clean_df)
+    parsed_df = parse_all_segments(clean_df)
     complete  = parsed_df['is_complete'].sum()
     print(f"Parsed segments: {len(parsed_df)} rows, {complete} complete")
 
@@ -144,3 +150,5 @@ plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads, save_path=AUDI
 plot_walk_audit_map_osm(gdf_all, gdf_lines, malden_gdf, save_path=AUDIT_MAP_OSM)
 if args.html:
     plot_walk_audit_map_html(gdf_all, gdf_lines, malden_gdf=malden_gdf, save_path=AUDIT_MAP_HTML)
+if args.folium:
+    plot_walk_audit_folium(geocoded_df, malden_gdf=malden_gdf, ward=args.ward, save_path=AUDIT_MAP_FOLIUM)

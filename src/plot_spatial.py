@@ -441,3 +441,156 @@ def plot_walk_audit_map_html(gdf_all, gdf_lines, malden_gdf=None, save_path=None
         m.save(str(save_path))
         print(f"Saved {save_path}")
     return m
+
+
+def plot_walk_audit_folium(geocoded_df, malden_gdf=None, ward=None, save_path=None):
+    """
+    Interactive Folium map built directly from the geocoded CSV — no road network needed.
+    Route segments are straight lines from begin to end point.
+
+    Parameters
+    ----------
+    geocoded_df : DataFrame from walk_audit_database.csv or audit_geocoded.csv
+    malden_gdf  : optional GeoDataFrame of Malden boundary
+    ward        : optional int ward number to filter to (e.g. 5 shows only Ward 5)
+    save_path   : optional path to write the HTML file
+    """
+    import folium
+    import pandas as pd
+    from src.constants import RATING_COLOR, AUDIT_OVERALL_Q, AUDIT_WARD_Q
+
+    df = geocoded_df.copy()
+    if ward is not None:
+        df = df[df[AUDIT_WARD_Q].str.contains(f"Ward {ward}", na=False)]
+
+    SIDEWALK_COLS = [
+        ("Buffer/curb",        '1. Is separated from the street by a barrier or buffer (a curb, grass, landscaping)  '),
+        ("Smooth surface",     '2. Is surfaced with a material that is smooth and consistent (e.g., concrete or asphalt rather than bricks)   '),
+        ("Good condition",     '3. Is in good condition, without cracks or raised sections '),
+        ("Free of obstacles",  '4. Is free of obstacles (hydrants, utility poles, overgrown landscaping, trash receptacles) '),
+        ("Free of driveways",  '5. Is free of interruptions from driveways (such as to/from homes, parking lots, etc.) '),
+        ("Continuous",         "6. Is continuous (no segments are missing) and complete (it doesn't randomly end) "),
+        ("Wide enough (≥5ft)", '7. Is wide enough (at least 5 feet) for two people to walk side by side or pass one another '),
+        ("Tactile indicators", '8. Has tactile ground surface indicators so pedestrians with vision impairment will know when the path is ending '),
+        ("Curb cut ramps",     '9. Has a curb cut ramp (for use by wheelchairs, baby strollers, etc.) wherever it is interrupted by a street '),
+    ]
+    CROSSING_COLS = [
+        ("Traffic lights",     '1. Has traffic lights and/or stop signs at intersections and crossings '),
+        ("Controls visible",   '2. The traffic lights and/or stop signs are clearly visible to drivers and pedestrians '),
+        ("Has crosswalks",     '3. Has crosswalks '),
+        ("Crosswalks marked",  '4. The crosswalks are well marked and clearly visible to drivers and pedestrians '),
+        ("Ped signage",        '5. Has signage alerting drivers to the presence of pedestrians '),
+        ("Bike lane",          '6. Has a designated bicycle lane '),
+    ]
+
+    def _score_cell(val):
+        try:
+            v = float(val)
+            bg = '#c8e6c9' if v >= 4 else '#fff9c4' if v >= 3 else '#ffcdd2'
+            return f'<td style="background:{bg};text-align:center;padding:1px 6px">{v:.0f}</td>'
+        except (TypeError, ValueError):
+            return '<td style="text-align:center;padding:1px 6px">—</td>'
+
+    def _popup_html(row):
+        street = str(row.get('along', ''))
+        ward_  = str(row.get(AUDIT_WARD_Q, ''))
+        rating = str(row.get(AUDIT_OVERALL_Q, ''))
+        rcolor = RATING_COLOR.get(rating, 'gray')
+        sw_rows = ''.join(
+            f'<tr><td style="padding:1px 4px">{lbl}</td>{_score_cell(row.get(col))}</tr>'
+            for lbl, col in SIDEWALK_COLS
+        )
+        cr_rows = ''.join(
+            f'<tr><td style="padding:1px 4px">{lbl}</td>{_score_cell(row.get(col))}</tr>'
+            for lbl, col in CROSSING_COLS
+        )
+        return (
+            '<div style="font-family:sans-serif;font-size:12px;min-width:240px;'
+            'max-height:400px;overflow-y:auto">'
+            f'<b style="font-size:14px">{street}</b><br>'
+            f'<span style="color:gray;font-size:11px">{ward_}</span><br>'
+            f'<span style="background:{rcolor};padding:2px 8px;border-radius:3px;'
+            f'font-weight:bold;color:white;display:inline-block;margin:3px 0">{rating}</span>'
+            '<table style="border-collapse:collapse;width:100%;margin-top:4px">'
+            '<tr><th colspan="2" style="text-align:left;padding:2px 4px;background:#eee">'
+            'Sidewalk (1–5)</th></tr>'
+            f'{sw_rows}'
+            '<tr><th colspan="2" style="text-align:left;padding:2px 4px;background:#eee">'
+            'Crossing (1–5)</th></tr>'
+            f'{cr_rows}'
+            '</table></div>'
+        )
+
+    begin_df = df[df['endpoint'] == 'begin'].dropna(subset=['lat', 'lon'])
+    end_df   = df[df['endpoint'] == 'end']
+
+    if ward is not None and len(begin_df) > 0:
+        center = [begin_df['lat'].mean(), begin_df['lon'].mean()]
+        zoom   = 15
+    else:
+        center = [42.4259, -71.0662]
+        zoom   = 14
+
+    m = folium.Map(location=center, zoom_start=zoom, tiles="CartoDB positron")
+
+    if malden_gdf is not None:
+        folium.GeoJson(
+            malden_gdf.to_crs("EPSG:4326").__geo_interface__,
+            style_function=lambda _: {"fillColor": "none", "color": "black", "weight": 2},
+        ).add_to(m)
+
+    rating_groups = {r: folium.FeatureGroup(name=r, show=True) for r in RATING_COLOR}
+    rating_groups['Unknown'] = folium.FeatureGroup(name='Unknown', show=True)
+    for g in rating_groups.values():
+        g.add_to(m)
+
+    for _, b_row in begin_df.iterrows():
+        ts     = b_row.get('Timestamp')
+        rating = str(b_row.get(AUDIT_OVERALL_Q, ''))
+        color  = RATING_COLOR.get(rating, 'gray')
+        group  = rating_groups.get(rating, rating_groups['Unknown'])
+        b_lat, b_lon = float(b_row['lat']), float(b_row['lon'])
+
+        e_match = end_df[end_df['Timestamp'] == ts]
+        if len(e_match) > 0:
+            e_row = e_match.iloc[0]
+            e_lat, e_lon = e_row.get('lat'), e_row.get('lon')
+            if pd.notna(e_lat) and pd.notna(e_lon):
+                folium.PolyLine(
+                    locations=[(b_lat, b_lon), (float(e_lat), float(e_lon))],
+                    color=color,
+                    weight=5,
+                    opacity=0.8,
+                    tooltip=f"{b_row.get('along', '')} — {rating}",
+                ).add_to(group)
+
+        folium.CircleMarker(
+            location=[b_lat, b_lon],
+            radius=8,
+            color='black',
+            weight=1,
+            fill=True,
+            fill_color=color,
+            fill_opacity=0.9,
+            popup=folium.Popup(_popup_html(b_row), max_width=300),
+            tooltip=f"{b_row.get('along', '')} — {rating}",
+        ).add_to(group)
+
+    folium.LayerControl(collapsed=False).add_to(m)
+
+    legend_items = ''.join(
+        f'<span style="background:{c};display:inline-block;width:14px;height:14px;'
+        f'margin-right:6px;border-radius:2px;vertical-align:middle;"></span>{r}<br>'
+        for r, c in RATING_COLOR.items()
+    )
+    m.get_root().html.add_child(folium.Element(
+        '<div style="position:fixed;bottom:30px;right:30px;z-index:1000;'
+        'background:white;padding:10px 14px;border:2px solid gray;'
+        'border-radius:6px;font-size:13px;font-family:sans-serif;">'
+        f'<b>Walk Audit Rating</b><br>{legend_items}</div>'
+    ))
+
+    if save_path:
+        m.save(str(save_path))
+        print(f"Saved {save_path}")
+    return m
