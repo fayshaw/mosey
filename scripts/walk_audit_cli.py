@@ -72,6 +72,8 @@ parser.add_argument('--folium', action='store_true',
                     help='Output a simple Folium HTML map with per-audit popups (no road network needed).')
 parser.add_argument('--ward', type=int, metavar='N',
                     help='With --folium: filter to a single ward (e.g. --ward 5).')
+parser.add_argument('--tiles', default='esri',
+                    help='With --folium: basemap style — esri (default), google, cartodb, osm, or a custom tile URL.')
 args = parser.parse_args()
 
 
@@ -153,4 +155,5 @@ if args.html:
 if args.folium:
     wards_gdf = load_malden_wards() if args.ward else None
     plot_walk_audit_folium(geocoded_df, malden_gdf=malden_gdf, gdf_lines=gdf_lines,
-                           wards_gdf=wards_gdf, ward=args.ward, save_path=AUDIT_MAP_FOLIUM)
+                           wards_gdf=wards_gdf, ward=args.ward, tiles=args.tiles,
+                           save_path=AUDIT_MAP_FOLIUM)

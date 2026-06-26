@@ -436,8 +436,16 @@ def plot_walk_audit_map_html(gdf_all, gdf_lines, malden_gdf=None, save_path=None
     return m
 
 
+FOLIUM_TILES = {
+    "esri":    ("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", "Esri"),
+    "google":  ("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", "Google"),
+    "cartodb": ("CartoDB positron", None),
+    "osm":     ("OpenStreetMap", None),
+}
+
+
 def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None,
-                           wards_gdf=None, ward=None, save_path=None):
+                           wards_gdf=None, ward=None, tiles="esri", save_path=None):
     """
     Interactive Folium map of walk audit data with per-audit popups.
 
@@ -452,6 +460,8 @@ def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None,
     gdf_lines   : optional GeoDataFrame from build_route_geodataframes (road-snapped routes)
     wards_gdf   : optional GeoDataFrame of ward/precinct boundaries (from load_malden_wards)
     ward        : optional int ward number to filter to (e.g. 5 shows only Ward 5)
+    tiles       : basemap style — "esri" (default), "google", "cartodb", "osm",
+                  or a custom tile URL string
     save_path   : optional path to write the HTML file
     """
     import folium
@@ -533,7 +543,9 @@ def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None,
         center = [42.4259, -71.0662]
         zoom   = 14
 
-    m = folium.Map(location=center, zoom_start=zoom, tiles="CartoDB positron")
+    tile_url, tile_attr = FOLIUM_TILES.get(tiles, (tiles, ""))
+    m = folium.Map(location=center, zoom_start=zoom, tiles=tile_url,
+                   attr=tile_attr or "")
 
     if malden_gdf is not None:
         folium.GeoJson(
@@ -552,6 +564,8 @@ def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None,
             style_function=lambda _: {
                 "fillColor": "#1a73e8",
                 "fillOpacity": 0.06,
+                # "color" : "#C4BA60",
+                #"color" : "#FFFF00",
                 "color": "#1a73e8",
                 "weight": 2.5,
                 "dashArray": "6, 4",
