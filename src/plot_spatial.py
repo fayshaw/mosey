@@ -1,19 +1,12 @@
 """
-Plotting functions for crash and walk audit data.
+Spatial map plotting functions for crash and walk audit data.
 
-Two groups of functions:
-  - Time-series charts (crash counts by year) — called by analyze_crashes.py
-  - Spatial maps (crash locations, walk audit routes) — require geopandas
+All functions accept an optional save_path argument and return the figure or
+map object so callers can compose or further annotate. Requires geopandas.
 
-All functions accept an out_dir argument so they can be called from any script
-without assuming a fixed output path.
+Time-series chart functions (crash counts by year) live in plot_counts.py.
 """
 import matplotlib.pyplot as plt
-
-
-# ── Spatial map plots ────────────────────────────────────────────────────────
-# These functions require geopandas. They are imported lazily so that
-# the time-series functions above work without geopandas installed.
 
 def plot_malden_boundary(malden_gdf, ax=None, figsize=(12, 10)):
     """

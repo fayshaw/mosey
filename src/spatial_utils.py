@@ -1,5 +1,8 @@
-import os
-import time
+"""
+Spatial computation utilities: road network, routing, geocoding, and proximity queries.
+
+No rendering here — functions return data or geometry. Plotting lives in plot_spatial.py.
+"""
 from pathlib import Path
 
 import numpy as np
