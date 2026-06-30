@@ -98,7 +98,7 @@ COLUMN_MAP = {
 
 # Walk audit rating scales
 RATING_VALUE = {'Great': 4, 'Acceptable': 3, 'Mixed': 2, 'Poor': 1}
-RATING_COLOR = {'Great': 'darkgreen', 'Acceptable': 'lightgreen', 'Mixed': 'gold', 'Poor': 'red'}
+RATING_COLOR = {'Great': 'darkgreen', 'Acceptable': 'lightgreen', 'Mixed': 'yellow', 'Poor': 'red'}
 
 # Ward fill colors (keys are int ward numbers 1–8)
 WARD_COLORS = {

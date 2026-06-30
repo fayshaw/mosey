@@ -195,12 +195,12 @@ def plot_walk_audit_map(gdf_all, gdf_lines, malden_gdf, malden_roads,
     for rating, color in RATING_COLOR.items():
         subset = gdf_lines[gdf_lines[AUDIT_OVERALL_Q] == rating]
         if not subset.empty:
-            subset.plot(ax=ax, color=color, linewidth=5, alpha=0.7)
+            subset.plot(ax=ax, color=color, linewidth=4, alpha=0.6)
 
     for rating, color in RATING_COLOR.items():
         subset = gdf_all[gdf_all[AUDIT_OVERALL_Q] == rating]
         if not subset.empty:
-            subset.plot(ax=ax, color=color, markersize=35, alpha=0.8, label=rating)
+            subset.plot(ax=ax, color=color, markersize=35, alpha=0.6, label=rating)
 
     street_labels = {}
     for _, row in gdf_lines.iterrows():
@@ -365,8 +365,8 @@ def plot_walk_audit_map_html(gdf_all, gdf_lines, malden_gdf=None, save_path=None
             folium.PolyLine(
                 locations=coords,
                 color=color,
-                weight=6,
-                opacity=0.85,
+                weight=5,
+                opacity=0.2,
                 tooltip=tooltip,
             ).add_to(m)
 
@@ -563,11 +563,12 @@ def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None,
             ward_boundary.__geo_interface__,
             style_function=lambda _: {
                 "fillColor": "#1a73e8",
-                "fillOpacity": 0.06,
+                "fillOpacity": 0.1, # 0.06,
                 # "color" : "#C4BA60",
                 #"color" : "#FFFF00",
-                "color": "#1a73e8",
-                "weight": 2.5,
+                #"color": "#1a73e8", #blue
+                "color" : "#000000",
+                "weight": 4, # 2.5,
                 "dashArray": "6, 4",
             },
             tooltip=f"Ward {ward}",
@@ -606,14 +607,26 @@ def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None,
                 continue
             tooltip = f"{line_row.get('along', '')} — {rating}"
             popup  = folium.Popup(_popup_html(survey_row), max_width=300)
-            for i, coords in enumerate(_polyline_coords(geom)):
+            all_coords = _polyline_coords(geom)
+            for i, coords in enumerate(all_coords):
                 folium.PolyLine(
                     locations=coords,
                     color=color,
-                    weight=5,
-                    opacity=0.8,
+                    weight=4, #5,
+                    opacity=0.7,
                     tooltip=tooltip,
                     popup=popup if i == 0 else None,
+                ).add_to(group)
+            for pt in [all_coords[0][0], all_coords[-1][-1]]:
+                folium.CircleMarker(
+                    location=pt,
+                    radius=5,
+                    color='black',
+                    weight=1,
+                    fill=True,
+                    fill_color=color,
+                    fill_opacity=1.0,
+                    tooltip=tooltip,
                 ).add_to(group)
 
     else:
@@ -630,16 +643,28 @@ def plot_walk_audit_folium(geocoded_df, malden_gdf=None, gdf_lines=None,
                 e_row = e_match.iloc[0]
                 e_lat, e_lon = e_row.get('lat'), e_row.get('lon')
                 if pd.notna(e_lat) and pd.notna(e_lon):
+                    e_lat, e_lon = float(e_lat), float(e_lon)
                     folium.PolyLine(
-                        locations=[(b_lat, b_lon), (float(e_lat), float(e_lon))],
+                        locations=[(b_lat, b_lon), (e_lat, e_lon)],
                         color=color,
                         weight=5,
                         opacity=0.8,
                         tooltip=f"{b_row.get('along', '')} — {rating}",
                         popup=folium.Popup(_popup_html(b_row), max_width=300),
                     ).add_to(group)
+                    for pt in [(b_lat, b_lon), (e_lat, e_lon)]:
+                        folium.CircleMarker(
+                            location=pt,
+                            radius=5,
+                            color='black',
+                            weight=1,
+                            fill=True,
+                            fill_color=color,
+                            fill_opacity=1.0,
+                            tooltip=f"{b_row.get('along', '')} — {rating}",
+                        ).add_to(group)
 
-    folium.LayerControl(collapsed=False).add_to(m)
+    #folium.LayerControl(collapsed=False).add_to(m)
 
     legend_items = ''.join(
         f'<span style="background:{c};display:inline-block;width:14px;height:14px;'
